@@ -1,0 +1,18 @@
+.container {
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    .not-found {
+        width: 600px;
+        height: 600px;
+        border-radius: 12px;
+        margin: 0 auto;
+        background-image: url('../../assets/404.png');
+        background-size: contain;
+        background-repeat: no-repeat;
+        line-height: 600px;
+        text-align: center;
+        font-size: 10rem;
+    }
+}
