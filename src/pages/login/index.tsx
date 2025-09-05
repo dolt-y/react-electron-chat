@@ -8,19 +8,21 @@ export default function Auth(): JSX.Element {
     const [password, setPassword] = useState<string>('');
     const [isLoginMode, setIsLoginMode] = useState<boolean>(true);
     const [email, setEmail] = useState<string>('');
-     const navigate = useNavigate();
+    const navigate = useNavigate();
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-
         try {
             if (isLoginMode) {
                 const response = await instance.post('/auth/login', { username, password });
                 console.log('登录成功:', response);
-                navigate('/chatNew');
+                if (response.success) {
+                    window.localStorage.setItem('token', response.result.access_token);
+                    navigate('/main');
+                }
             } else {
                 const response = await instance.post('/auth/register', { username, password, email });
                 console.log('注册成功:', response);
-                if (response.data.success) {
+                if (response.success) {
                     handleModeSwitch();
                 }
             }
@@ -31,7 +33,7 @@ export default function Auth(): JSX.Element {
 
     const handleModeSwitch = <T extends React.MouseEvent<HTMLAnchorElement> | undefined>(e?: T) => {
         if (e) {
-            e.preventDefault(); 
+            e.preventDefault();
         }
         setIsLoginMode(!isLoginMode);
         setUsername('');

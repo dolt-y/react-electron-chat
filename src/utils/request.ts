@@ -21,22 +21,19 @@ const closeLoading = () => {
 const request = async (config: any) => {
     showLoading();
     try {
-        const tokenName = localStorage.getItem('tokenName');
-        const tokenValue = localStorage.getItem('tokenValue');
-        if (tokenName && tokenValue) {
+        const token = localStorage.getItem('token');
+        if (token) {
             config.headers = config.headers || {};
-            config.headers[tokenName] = tokenValue;
+            config.headers['Authorization'] = `Bearer ${token}`;
         }
-
         const res = await window.electronAPI.request(config);
-
         closeLoading();
 
-        if (res.success) {
+        if (res.data.success) {
             message.success(res.data?.message || '请求成功');
             return res.data;
         } else {
-            message.error(res.message || '异常请求');
+            message.error(res.data.message || '异常请求');
             return Promise.reject(res);
         }
     } catch (err) {

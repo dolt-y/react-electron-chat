@@ -1,0 +1,123 @@
+  .contacts-panel {
+    width: 280px;
+    // border-right: 1px solid var(--primary-100);
+    display: flex;
+    flex-direction: column;
+
+    .contacts-header {
+      padding: 16px;
+
+      h2 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+
+      .search-box {
+        position: relative;
+
+        .search-icon {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          z-index: 1;
+        }
+
+        .search-input {
+          padding: 8px 12px 8px 36px;
+          background: var(--bg-secondary);
+          border: none;
+          border-radius: 6px;
+          width: 100%;
+          color: var(--text-primary);
+
+          &:focus {
+            background: var(--bg-tertiary);
+            outline: none;
+          }
+        }
+      }
+    }
+
+    .contacts-list {
+      flex: 1;
+      padding: 8px 0;
+      overflow-y: auto;
+
+      .contact-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+
+        &:hover {
+          background: var(--gray-50);
+        }
+
+        &.active {
+          background: var(--gray-200);
+        }
+
+        .contact-avatar {
+          position: relative;
+          margin-right: 12px;
+
+          .online-indicator {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 8px;
+            height: 8px;
+            background: #00d26a;
+            border-radius: 50%;
+            border: 2px solid var(--color-card);
+          }
+        }
+
+        .contact-info {
+          flex: 1;
+          min-width: 0;
+
+          .contact-name {
+            font-weight: 500;
+            color: var(--color-foreground);
+            margin-bottom: 2px;
+          }
+
+          .last-message {
+            font-size: 13px;
+            color: var(--color-muted-foreground);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+        }
+
+        .contact-meta {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 4px;
+
+          .message-time {
+            font-size: 12px;
+            color: var(--color-muted-foreground);
+          }
+
+          .unread-badge {
+            background: #ff4757;
+            color: white;
+            font-size: 11px;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+        }
+      }
+    }
+  }

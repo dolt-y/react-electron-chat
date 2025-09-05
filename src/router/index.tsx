@@ -1,15 +1,13 @@
 import { Routes, Route } from 'react-router-dom';
 import Login from '../pages/login';
 import NotFound from '../pages/404'
-import Chat from '../pages/chat';
-import ChatInterface from '../pages/chatNext/index'
+import ChatPage from '../pages/chat/index'
 const AppRouter: React.FC = () => {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="*" element={<NotFound />} />
-      <Route path="/chatNew" element={<ChatInterface/>} />
-      <Route path="/chat" element={<Chat />} />
+      <Route path="/main" element={<ChatPage />} />
     </Routes>
   );
 }

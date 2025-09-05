@@ -8610,24 +8610,16 @@ const createWindow = async () => {
   }
 };
 ipcMain.handle("api-request", async (event, config) => {
-  try {
-    const instance = axios.create({
-      baseURL: "http://localhost:8080",
-      timeout: 1e4,
-      headers: {
-        "Content-Type": "application/json",
-        ...config.headers
-      }
-    });
-    const response = await instance.request(config);
-    return { success: true, data: response.data };
-  } catch (err) {
-    const status = err.response?.status;
-    let messageText = "系统错误";
-    if (status === 401) messageText = "未授权，请登录";
-    else if (status === 404) messageText = "资源未找到";
-    return { success: false, status, message: messageText, data: err.response?.data };
-  }
+  const instance = axios.create({
+    baseURL: "http://localhost:8080",
+    timeout: 1e4,
+    headers: {
+      "Content-Type": "application/json",
+      ...config.headers
+    }
+  });
+  const response = await instance.request(config);
+  return response.data;
 });
 app.whenReady().then(() => {
   createWindow();
