@@ -35,8 +35,11 @@ export const Contact: React.FC<ContactProps> = ({ onSelectChat }) => {
         if (res.success) {
           const data: Chat[] = res.result;
           setChatList(data);
-          setSelectedChat(data[0] || null);
-          onSelectChat(data[0] || null);
+          console.log("获取聊天列表成功", data);
+
+          // ⚠️ 不默认选中第一个
+          // setSelectedChat(data[0] || null);
+          // onSelectChat(data[0] || null);
         } else {
           console.error("接口返回失败", res.message);
         }
@@ -74,8 +77,15 @@ export const Contact: React.FC<ContactProps> = ({ onSelectChat }) => {
               className={`${styles["contact-item"]} ${selectedChat?.chatId === chat.chatId ? styles["active"] : ""
                 }`}
               onClick={() => {
-                setSelectedChat(chat);
-                onSelectChat(chat);
+                if (selectedChat?.chatId === chat.chatId) {
+                  // 再次点击 → 清空
+                  setSelectedChat(null);
+                  onSelectChat(null);
+                } else {
+                  // 切换新会话
+                  setSelectedChat(chat);
+                  onSelectChat(chat);
+                }
               }}
             >
               <div className={styles["contact-avatar"]}>

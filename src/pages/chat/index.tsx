@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, type JSX } from "react";
 import { Sidebar } from "../../components/chat/sidebar/sidebar";
 import { Contact, type Chat } from "../../components/chat/contact/contact";
 import { ChatPanel } from "../../components/chat/chatPanel/chatPanel";
 import styles from "./chatPage.module.scss";
 
-export default function ChatPage() {
+export default function ChatPage(): JSX.Element {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
 
   const handleSelectChat = (chat: Chat | null) => {

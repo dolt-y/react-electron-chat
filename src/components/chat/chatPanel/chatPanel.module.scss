@@ -60,7 +60,7 @@
         gap: 8px;
 
         &.messageSent {
-          flex-direction: row-reverse; // 自己消息靠右
+          flex-direction: row-reverse;
         }
 
         .messageAvatar {
@@ -147,5 +147,14 @@
         }
       }
     }
+  }
+
+  .emptyState {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #999;
+    font-size: 14px;
   }
 }
