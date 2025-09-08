@@ -1,4 +1,4 @@
-import { ipcMain, app, BrowserWindow, Menu } from "electron";
+import { ipcMain, app, BrowserWindow, Menu, globalShortcut } from "electron";
 import path from "path";
 import require$$0$1, { fileURLToPath } from "url";
 import require$$1 from "util";
@@ -8602,10 +8602,19 @@ const createWindow = async () => {
     }
   });
   Menu.setApplicationMenu(null);
+  globalShortcut.register("CommandOrControl+Shift+I", () => {
+    if (!win) return;
+    if (win.webContents.isDevToolsOpened()) {
+      win.webContents.closeDevTools();
+    } else {
+      win.webContents.openDevTools({ mode: "detach" });
+    }
+  });
   if (process.env.VITE_DEV_SERVER_URL) {
+    console.log("开发环境");
     await win.loadURL(process.env.VITE_DEV_SERVER_URL);
-    win.webContents.openDevTools();
   } else {
+    console.log("生产环境");
     await win.loadFile(indexHtml);
   }
 };

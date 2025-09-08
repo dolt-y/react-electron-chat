@@ -19,7 +19,7 @@ const closeLoading = () => {
 };
 
 const request = async (config: any) => {
-    showLoading();
+    // showLoading();
     try {
         const token = localStorage.getItem('token');
         if (token) {
@@ -27,10 +27,10 @@ const request = async (config: any) => {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
         const res = await window.electronAPI.request(config);
-        closeLoading();
+        // closeLoading();
 
         if (res.data.success) {
-            message.success(res.data?.message || '请求成功');
+            // message.success(res.data?.message || '请求成功');
             return res.data;
         } else {
             message.error(res.data.message || '异常请求');

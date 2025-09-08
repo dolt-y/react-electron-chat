@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain } from 'electron';
+import { app, BrowserWindow, Menu, ipcMain, globalShortcut } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import axios, { AxiosRequestConfig } from 'axios';
@@ -22,11 +22,21 @@ const createWindow = async () => {
     });
 
     Menu.setApplicationMenu(null);
+    globalShortcut.register('CommandOrControl+Shift+I', () => {
+        if (!win) return;
+        if (win.webContents.isDevToolsOpened()) {
+            win.webContents.closeDevTools();
+        } else {
+            win.webContents.openDevTools({ mode: 'detach' });
+        }
+    });
 
+    // 加载页面：开发环境或打包环境
     if (process.env.VITE_DEV_SERVER_URL) {
+        console.log('开发环境');
         await win.loadURL(process.env.VITE_DEV_SERVER_URL);
-        win.webContents.openDevTools();
     } else {
+        console.log('生产环境');
         await win.loadFile(indexHtml);
     }
 };

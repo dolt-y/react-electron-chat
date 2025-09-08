@@ -1,0 +1,24 @@
+.chatContainer {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  background: var(--bg-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.sidebar {
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.contactsPanel {
+  width: 280px;
+  border-right: 1px solid var(--primary-100);
+  flex-shrink: 0;
+}
+
+.chatPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}

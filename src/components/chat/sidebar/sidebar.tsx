@@ -2,8 +2,11 @@ import { LogOut, Settings, User, Users } from "lucide-react";
 import instance from "../../../utils/request";
 import { useNavigate } from "react-router-dom";
 import styles from './sidebar.module.scss';
+interface SidebarProps {
+    className?: string;
+}
 
-export const Sidebar: React.FC = () => {
+export const Sidebar: React.FC<SidebarProps> = () => {
     const navigate = useNavigate();
     const logout = async () => {
         const response = await instance.post('/auth/logout');

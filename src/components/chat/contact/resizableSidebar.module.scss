@@ -1,0 +1,22 @@
+.sidebar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sidebarContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  cursor: ew-resize;
+  background: var(--gray-100);
+  transition: background 0.2s;
+}
