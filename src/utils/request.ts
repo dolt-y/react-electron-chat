@@ -30,7 +30,7 @@ const request = async (config: any) => {
         // closeLoading();
 
         if (res.data.success) {
-            // message.success(res.data?.message || '请求成功');
+            message.success(res.data?.message || '请求成功');
             return res.data;
         } else {
             message.error(res.data.message || '异常请求');

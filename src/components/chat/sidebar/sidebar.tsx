@@ -1,44 +1,82 @@
-import { LogOut, Settings, User, Users } from "lucide-react";
+import { MessageSquare, Users, Settings, LogOut } from "lucide-react";
 import instance from "../../../utils/request";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import styles from './sidebar.module.scss';
+
 interface SidebarProps {
     className?: string;
 }
 
-export const Sidebar: React.FC<SidebarProps> = () => {
+export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // 判断菜单是否高亮
+    const isActive = (path: string) => location.pathname === path;
+
+    // 退出登录
     const logout = async () => {
-        const response = await instance.post('/auth/logout');
-        if (response.success) {
-            navigate('/');
+        if (!confirm("确定退出登录吗？")) return;
+        try {
+            const response = await instance.post('/auth/logout');
+            if (response.success) {
+                navigate('/');
+            } else {
+                alert(response.message || "退出失败");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("退出请求失败");
         }
-    }
+    };
+
+    // 菜单配置
+    const menuItems = [
+        { icon: MessageSquare, label: '消息', path: '/chat' },
+        { icon: Users, label: '好友', path: '/friends' },
+        { icon: Settings, label: '设置', path: '/settings' },
+    ];
+
     return (
-        <div className={styles.sidebar}>
+        <div className={`${styles.sidebar} ${className || ""}`}>
+            {/* 头像区域 */}
             <div className={styles['sidebar-header']}>
-                <div className={styles['user-avatar']}>
-                    <img src="https://q2.qlogo.cn/headimg_dl?dst_uin=2233296011&spec=100&v=0.5979924341645101" alt="用户头像" />
+                <div
+                    className={styles['user-avatar']}
+                    onClick={() => navigate('/profile')}
+                    title="个人资料"
+                >
+                    <img
+                        src="https://q2.qlogo.cn/headimg_dl?dst_uin=2233296011&spec=100&v=0.5979924341645101"
+                        alt="用户头像"
+                    />
                 </div>
             </div>
 
+            {/* 菜单区域 */}
             <div className={styles['sidebar-menu']}>
-                <button className={`${styles['menu-item']} ${styles.active}`}>
-                    <User size={20} />
-                </button>
-                <button className={styles['menu-item']}>
-                    <Users size={20} />
-                </button>
-                <button className={styles['menu-item']}>
-                    <Settings size={20} />
-                </button>
+                {menuItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                        <button
+                            key={item.label}
+                            className={`${styles['menu-item']} ${isActive(item.path) ? styles.active : ''}`}
+                            onClick={() => navigate(item.path)}
+                            title={item.label}
+                        >
+                            <Icon size={20} />
+                            <span className={styles['menu-label']}>{item.label}</span>
+                        </button>
+                    );
+                })}
             </div>
 
+            {/* 底部退出按钮 */}
             <div className={styles['sidebar-footer']}>
-                <button className={styles['menu-item']} onClick={logout}>
+                <button className={styles['menu-item']} onClick={logout} title="退出登录">
                     <LogOut size={20} />
                 </button>
             </div>
         </div>
-    )
-}
+    );
+};

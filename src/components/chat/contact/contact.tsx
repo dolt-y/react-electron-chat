@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import styles from "./contact.module.scss";
 import instance from "../../../utils/request";
@@ -31,15 +31,12 @@ export const Contact: React.FC<ContactProps> = ({ onSelectChat }) => {
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const res = await instance.get("/chat/sessionList", { userId: 1 });
+        const res = await instance.get("/chat/sessionList", { userId: 3 });
         if (res.success) {
           const data: Chat[] = res.result;
           setChatList(data);
           console.log("获取聊天列表成功", data);
-
-          // ⚠️ 不默认选中第一个
-          // setSelectedChat(data[0] || null);
-          // onSelectChat(data[0] || null);
+          // ⚠️ 不默认选中第一个，保持空状态
         } else {
           console.error("接口返回失败", res.message);
         }
@@ -57,19 +54,30 @@ export const Contact: React.FC<ContactProps> = ({ onSelectChat }) => {
   return (
     <ResizableSidebar>
       <div className={styles["contacts-panel"]}>
+        {/* 头部 */}
         <div className={styles["contacts-header"]}>
           <h2>聊天</h2>
-          <div className={styles["search-box"]}>
-            <Search className={styles["search-icon"]} size={16} />
-            <input
-              className={styles["search-input"]}
-              placeholder="搜索联系人"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
+          <div className={styles["header-actions"]}>
+            <div className={styles["search-box"]}>
+              <Search className={styles["search-icon"]} size={16} />
+              <input
+                className={styles["search-input"]}
+                placeholder="搜索联系人"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+            </div>
+            <button
+              className={styles["add-button"]}
+              title="新建会话"
+              onClick={() => console.log("新建会话")}
+            >
+              <Plus size={18} />
+            </button>
           </div>
         </div>
 
+        {/* 列表 */}
         <div className={styles["contacts-list"]}>
           {filteredChats.map((chat, index) => (
             <div
@@ -110,10 +118,13 @@ export const Contact: React.FC<ContactProps> = ({ onSelectChat }) => {
 
               <div className={styles["contact-meta"]}>
                 <div className={styles["message-time"]}>
-                  {new Date(chat.lastMessage.createdAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {new Date(chat.lastMessage.createdAt).toLocaleTimeString(
+                    [],
+                    {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }
+                  )}
                 </div>
                 {chat.unreadCount > 0 && (
                   <div className={styles["unread-badge"]}>
