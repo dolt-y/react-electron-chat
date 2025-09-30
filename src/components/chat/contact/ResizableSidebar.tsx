@@ -9,7 +9,7 @@ interface ResizableSidebarProps {
     rightDragSensitivity?: number; // 控制向右拖动灵敏度
 }
 
-export const ResizableSidebar: React.FC<ResizableSidebarProps> = ({
+export const ResizableSidebar: React.FC <ResizableSidebarProps> = ({
     children,
     defaultWidth = 280,
     minWidth = 250,

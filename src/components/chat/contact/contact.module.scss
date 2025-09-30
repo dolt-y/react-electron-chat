@@ -20,7 +20,7 @@
       gap: 10px;
 
       .add-button {
-         padding: 8px 12px 6px 12px;
+        padding: 8px 12px 6px 12px;
         background: var(--bg-secondary);
         color: var(--text-primary);
       }
@@ -94,6 +94,7 @@
       .contact-info {
         flex: 1;
         min-width: 0;
+        text-align: left;
 
         .contact-name {
           font-weight: 500;

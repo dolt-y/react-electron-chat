@@ -7,5 +7,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     chrome: () => process.versions.chrome,
     electron: () => process.versions.electron,
   },
-  request: (config) => ipcRenderer.invoke('api-request', config)
+  request: (config: any) => ipcRenderer.invoke('api-request', config)
 });

@@ -8630,6 +8630,7 @@ ipcMain.handle("api-request", async (event, config) => {
   const response = await instance.request(config);
   return response.data;
 });
+app.disableHardwareAcceleration();
 app.whenReady().then(() => {
   createWindow();
   app.on("activate", () => {

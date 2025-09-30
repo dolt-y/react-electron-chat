@@ -20,12 +20,16 @@ export interface Chat {
 
 interface ContactProps {
   onSelectChat: (chat: Chat | null) => void;
+  selectedChat: Chat | null;
   className?: string;
 }
 
-export const Contact: React.FC<ContactProps> = ({ onSelectChat }) => {
+export const Contact: React.FC<ContactProps> = ({ 
+  onSelectChat, 
+  selectedChat,
+  className 
+}) => {
   const [searchInput, setSearchInput] = useState("");
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [chatList, setChatList] = useState<Chat[]>([]);
 
   useEffect(() => {
@@ -36,7 +40,6 @@ export const Contact: React.FC<ContactProps> = ({ onSelectChat }) => {
           const data: Chat[] = res.result;
           setChatList(data);
           console.log("获取聊天列表成功", data);
-          // ⚠️ 不默认选中第一个，保持空状态
         } else {
           console.error("接口返回失败", res.message);
         }
@@ -54,9 +57,7 @@ export const Contact: React.FC<ContactProps> = ({ onSelectChat }) => {
   return (
     <ResizableSidebar>
       <div className={styles["contacts-panel"]}>
-        {/* 头部 */}
         <div className={styles["contacts-header"]}>
-          <h2>聊天</h2>
           <div className={styles["header-actions"]}>
             <div className={styles["search-box"]}>
               <Search className={styles["search-icon"]} size={16} />
@@ -77,21 +78,17 @@ export const Contact: React.FC<ContactProps> = ({ onSelectChat }) => {
           </div>
         </div>
 
-        {/* 列表 */}
         <div className={styles["contacts-list"]}>
           {filteredChats.map((chat, index) => (
             <div
               key={`${chat.chatId}-${index}`}
-              className={`${styles["contact-item"]} ${selectedChat?.chatId === chat.chatId ? styles["active"] : ""
-                }`}
+              className={`${styles["contact-item"]} ${
+                selectedChat?.chatId === chat.chatId ? styles["active"] : ""
+              }`}
               onClick={() => {
                 if (selectedChat?.chatId === chat.chatId) {
-                  // 再次点击 → 清空
-                  setSelectedChat(null);
                   onSelectChat(null);
                 } else {
-                  // 切换新会话
-                  setSelectedChat(chat);
                   onSelectChat(chat);
                 }
               }}

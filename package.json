@@ -16,6 +16,7 @@
     "axios": "^1.10.0",
     "lucide-react": "^0.525.0",
     "react": "^18.3.1",
+    "react-activation": "^0.13.4",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.6.3",
     "vite-plugin-electron": "^0.29.0"

@@ -1,41 +1,33 @@
-import { MessageSquare, Users, Settings, LogOut } from "lucide-react";
+import { LogOut, MessageSquare, Settings, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import instance from "../../../utils/request";
-import { useNavigate, useLocation } from "react-router-dom";
 import styles from './sidebar.module.scss';
-
 interface SidebarProps {
     className?: string;
+    activeTab?: string;
+    onChangeTab?: (tab: "messages" | "friends") => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
+export const Sidebar: React.FC <SidebarProps> = ({ className, activeTab, onChangeTab }) => {
     const navigate = useNavigate();
-    const location = useLocation();
 
-    // 判断菜单是否高亮
-    const isActive = (path: string) => location.pathname === path;
+    const menuItems = [
+        { icon: MessageSquare, label: '消息', tab: 'messages' },
+        { icon: Users, label: '好友', tab: 'friends' },
+        { icon: Settings, label: '设置', path: '/settings' },
+    ];
 
-    // 退出登录
     const logout = async () => {
         if (!confirm("确定退出登录吗？")) return;
         try {
             const response = await instance.post('/auth/logout');
-            if (response.success) {
-                navigate('/');
-            } else {
-                alert(response.message || "退出失败");
-            }
+            if (response.success) navigate('/');
+            else alert(response.message || "退出失败");
         } catch (err) {
             console.error(err);
             alert("退出请求失败");
         }
     };
-
-    // 菜单配置
-    const menuItems = [
-        { icon: MessageSquare, label: '消息', path: '/chat' },
-        { icon: Users, label: '好友', path: '/friends' },
-        { icon: Settings, label: '设置', path: '/settings' },
-    ];
 
     return (
         <div className={`${styles.sidebar} ${className || ""}`}>
@@ -55,13 +47,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
 
             {/* 菜单区域 */}
             <div className={styles['sidebar-menu']}>
-                {menuItems.map((item) => {
+                {menuItems.map(item => {
                     const Icon = item.icon;
+                    const isActiveMenu = activeTab === item.tab;
                     return (
                         <button
                             key={item.label}
-                            className={`${styles['menu-item']} ${isActive(item.path) ? styles.active : ''}`}
-                            onClick={() => navigate(item.path)}
+                            className={`${styles['menu-item']} ${isActiveMenu ? styles.active : ''}`}
+                            onClick={() => {
+                                if (item.tab && onChangeTab) onChangeTab(item.tab);
+                                else if (item.path) navigate(item.path);
+                            }}
                             title={item.label}
                         >
                             <Icon size={20} />

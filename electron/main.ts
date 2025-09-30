@@ -17,7 +17,7 @@ const createWindow = async () => {
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
-            nodeIntegration: false
+            nodeIntegration: false,
         },
     });
 
@@ -55,7 +55,7 @@ ipcMain.handle('api-request', async (event, config: AxiosRequestConfig) => {
     return response.data;
 });
 
-
+app.disableHardwareAcceleration(); // 1. 禁用 GPU 加速
 app.whenReady().then(() => {
     createWindow();
     app.on('activate', () => {
