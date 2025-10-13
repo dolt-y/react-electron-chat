@@ -12,6 +12,7 @@ import {
 import styles from "./ChatPanel.module.scss";
 import { type Chat } from "../contact/contact";
 import instance from "../../../utils/request";
+import { ResizableSidebar } from "../contact/ResizableSidebar";
 
 export interface Message {
   id: number;
@@ -43,22 +44,19 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   const loadingRef = useRef(false);
 
   // 缓存：每个会话的消息列表 & scrollTop
-  const messagesCache = useRef<
-    Record<number, { messages: Message[]; scrollTop: number }>
-  >({});
+  const messagesCache = useRef<Record<number, { messages: Message[]; scrollTop: number }>>({});
   const pageCache = useRef<Record<number, number>>({});
   const hasMoreCache = useRef<Record<number, boolean>>({});
 
   // -------------------------------
   // 获取消息
   // -------------------------------
+  const [messagesState, setMessagesState] = useState<Message[]>([]);
+
   const fetchMessages = async (chatId: number, page: number) => {
     if (!messagesContainerRef.current) return;
-    const container = messagesContainerRef.current;
 
-    // 防止重复请求
     if (loadingRef.current || hasMoreCache.current[chatId] === false) return;
-
     loadingRef.current = true;
 
     try {
@@ -70,7 +68,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
       if (res.success) {
         const newMessages: Message[] = res.result;
-
+        console.log("获取消息成功", newMessages);
         // 初始化缓存
         if (!messagesCache.current[chatId]) {
           messagesCache.current[chatId] = { messages: [], scrollTop: 0 };
@@ -79,54 +77,49 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         }
 
         const currentCache = messagesCache.current[chatId];
-        const prevScrollHeight = container.scrollHeight;
 
         if (page === 1) {
-          // 首次加载
           currentCache.messages = newMessages;
-          setTimeout(() => scrollToBottom(), 50);
         } else {
-          // 上拉加载历史消息，保持 scrollTop
           currentCache.messages = [...newMessages, ...currentCache.messages];
-          setTimeout(() => {
-            container.scrollTop = container.scrollHeight - prevScrollHeight;
-          }, 50);
         }
 
         pageCache.current[chatId] = page;
         if (newMessages.length < PAGE_SIZE) hasMoreCache.current[chatId] = false;
-      } else {
-        console.error("获取消息失败", res.message);
+
+        // ✅ 更新 state 触发渲染
+        setMessagesState([...currentCache.messages]);
+
+        // 滚动到底部
+        setTimeout(() => scrollToBottom(), 50);
       }
-    } catch (err) {
-      console.error("接口请求失败", err);
     } finally {
       loadingRef.current = false;
     }
   };
+
 
   // -------------------------------
   // 监听会话切换
   // -------------------------------
   useEffect(() => {
     if (!selectedChat) return;
+
     const chatId = selectedChat.chatId;
 
-    // 首次点击会话，初始化缓存
     if (!messagesCache.current[chatId]) {
-      messagesCache.current[chatId] = { messages: [], scrollTop: 0 };
-      pageCache.current[chatId] = 1;
-      hasMoreCache.current[chatId] = true;
-
+      // 首次点击聊天，拉取第一页消息
       fetchMessages(chatId, 1);
     } else {
-      // 切换已有会话，恢复 scrollTop
+      // 切换已有聊天，恢复缓存消息和 scrollTop
+      setMessagesState([...messagesCache.current[chatId].messages]);
       setTimeout(() => {
         const container = messagesContainerRef.current;
         if (container) container.scrollTop = messagesCache.current[chatId].scrollTop;
       }, 50);
     }
   }, [selectedChat]);
+
 
   // -------------------------------
   // 滚动到底部
@@ -205,9 +198,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     return cache.messages.map((message) => (
       <div
         key={message.id}
-        className={`${styles.message} ${
-          message.sender === "me" ? styles.messageSent : ""
-        }`}
+        className={`${styles.message} ${message.sender === "me" ? styles.messageSent : ""
+          }`}
       >
         {message.sender === "other" && (
           <img
@@ -267,9 +259,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           <div>
             <h3>{selectedChat.chatName || "未选择"}</h3>
             <span
-              className={`${styles.status} ${
-                selectedChat.online ? styles.online : styles.offline
-              }`}
+              className={`${styles.status} ${selectedChat.online ? styles.online : styles.offline
+                }`}
             >
               {selectedChat.online ? "在线" : "离线"}
             </span>
@@ -295,37 +286,41 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       >
         <div className={styles.messagesContainer}>{renderMessages()}</div>
       </div>
-
-      <div className={styles.messageInputArea}>
-        <div className={styles.inputToolbar}>
-          <button className={styles.toolbarButton}>
-            <Smile size={18} />
-          </button>
-          <button className={styles.toolbarButton}>
-            <Paperclip size={18} />
-          </button>
-          <button className={styles.toolbarButton}>
-            <ImageIcon size={18} />
-          </button>
+      <ResizableSidebar
+        direction="top"
+        defaultSize={120}
+      >
+        <div className={styles.messageInputArea}>
+          <div className={styles.inputToolbar}>
+            <button className={styles.toolbarButton}>
+              <Smile size={18} />
+            </button>
+            <button className={styles.toolbarButton}>
+              <Paperclip size={18} />
+            </button>
+            <button className={styles.toolbarButton}>
+              <ImageIcon size={18} />
+            </button>
+          </div>
+          <div className={styles.inputContainer}>
+            <textarea
+              className={styles.messageInput}
+              placeholder="输入消息..."
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
+              onKeyPress={(e) =>
+                e.key === "Enter" &&
+                !e.shiftKey &&
+                (e.preventDefault(), handleSendMessage())
+              }
+              rows={1}
+            />
+            <button className={styles.sendButton} onClick={handleSendMessage}>
+              <Send size={18} />
+            </button>
+          </div>
         </div>
-        <div className={styles.inputContainer}>
-          <textarea
-            className={styles.messageInput}
-            placeholder="输入消息..."
-            value={messageInput}
-            onChange={(e) => setMessageInput(e.target.value)}
-            onKeyPress={(e) =>
-              e.key === "Enter" &&
-              !e.shiftKey &&
-              (e.preventDefault(), handleSendMessage())
-            }
-            rows={1}
-          />
-          <button className={styles.sendButton} onClick={handleSendMessage}>
-            <Send size={18} />
-          </button>
-        </div>
-      </div>
+      </ResizableSidebar>
 
       {showDetails && selectedChat && (
         <div className={styles.detailsPanel}>

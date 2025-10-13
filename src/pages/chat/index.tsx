@@ -1,11 +1,12 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { Sidebar } from "../../components/chat/sidebar/sidebar";
 import { Contact, type Chat } from "../../components/chat/contact/contact";
 import { FriendList } from "../../components/frilend/list";
 import { ChatPanel } from "../../components/chat/chatPanel/chatPanel";
 import styles from "./chatPage.module.scss";
-
-export default function ChatPage() {
+import { useChatSocket } from "../../hook/useChatSocket"
+export default function ChatPage(): JSX.Element {
+  const { messages, joinRoom, sendMessage, currentRoomId } = useChatSocket();
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [activeTab, setActiveTab] = useState<"messages" | "friends">("messages");
   const lastChatRef = useRef<Chat | null>(null);
@@ -20,7 +21,12 @@ export default function ChatPage() {
       setSelectedChat(lastChatRef.current);
     }
   };
-
+  useEffect(() => {
+    console.log("当前房间ID:", selectedChat);
+    if (selectedChat) {
+      joinRoom(selectedChat.chatId);
+    }
+  }, [selectedChat, joinRoom]);
   return (
     <div className={styles.chatContainer}>
       <Sidebar
@@ -42,7 +48,6 @@ export default function ChatPage() {
           />
         </>
       )}
-
       {activeTab === "friends" && <FriendList />}
     </div>
   );

@@ -24,7 +24,7 @@ interface ContactProps {
   className?: string;
 }
 
-export const Contact: React.FC<ContactProps> = ({ 
+export const Contact: React.FC <ContactProps> = ({ 
   onSelectChat, 
   selectedChat,
   className 
@@ -35,7 +35,7 @@ export const Contact: React.FC<ContactProps> = ({
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const res = await instance.get("/chat/sessionList", { userId: 3 });
+        const res = await instance.get("/chat/sessionList", { userId: 1 });
         if (res.success) {
           const data: Chat[] = res.result;
           setChatList(data);

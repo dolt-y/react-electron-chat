@@ -12,11 +12,42 @@
 
 .handle {
   position: absolute;
-  right: 0;
-  top: 0;
-  width: 3px;
-  height: 100%;
-  cursor: ew-resize;
   background: var(--gray-100);
   transition: background 0.2s;
+
+  &.right {
+    right: 0;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    cursor: ew-resize;
+  }
+
+  &.left {
+    left: 0;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    cursor: ew-resize;
+  }
+
+  &.top {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    cursor: ns-resize;
+  }
+
+  &.bottom {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    cursor: ns-resize;
+  }
+
+  &:hover {
+    background: var(--gray-300);
+  }
 }

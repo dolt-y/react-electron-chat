@@ -55,7 +55,7 @@ ipcMain.handle('api-request', async (event, config: AxiosRequestConfig) => {
     return response.data;
 });
 
-app.disableHardwareAcceleration(); // 1. 禁用 GPU 加速
+app.disableHardwareAcceleration(); // 禁用 GPU 加速
 app.whenReady().then(() => {
     createWindow();
     app.on('activate', () => {
