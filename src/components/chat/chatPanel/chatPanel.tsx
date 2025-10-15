@@ -4,7 +4,6 @@ import {
   Smile,
   Phone,
   Video,
-  MoreHorizontal,
   ImageIcon,
 } from "lucide-react";
 import styles from "./ChatPanel.module.scss";
@@ -12,6 +11,7 @@ import { type Chat } from "../contact/contact";
 import instance from "../../../utils/request";
 import { ResizableSidebar } from "../contact/ResizableSidebar";
 import { MessageItem } from "./message";
+import { ChatHeader } from "./chatheader";
 
 export interface Message {
   id: number;
@@ -37,6 +37,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 }) => {
   const [messageInput, setMessageInput] = useState("");
   const [showDetails, setShowDetails] = useState(false);
+  const detailsRef = useRef<HTMLDivElement | null>(null);
 
   const PAGE_SIZE = 10;
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -120,6 +121,24 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     }
   }, [selectedChat]);
 
+  // 点击空白区域关闭逻辑
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      // 若点击位置不在面板内，则关闭
+      if (detailsRef.current && !detailsRef.current.contains(event.target as Node)) {
+        setShowDetails(false);
+      }
+    }
+
+    if (showDetails) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    // 清除事件监听
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showDetails]);
 
   // -------------------------------
   // 滚动到底部
@@ -213,48 +232,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
   return (
     <div className={`${styles.chatPanel} ${className || ""}`}>
-      <div className={styles.chatHeader}>
-        <div className={styles.chatUserInfo}>
-          <img
-            src={selectedChat.chatAvatar || "/placeholder.svg"}
-            style={{ width: 40, height: 40, borderRadius: "50%" }}
-          />
-          <div>
-            <h3>{selectedChat.chatName || "未选择"}</h3>
-            <span
-              className={`${styles.status} ${selectedChat.online ? styles.online : styles.offline
-                }`}
-            >
-              {selectedChat.online ? "在线" : "离线"}
-            </span>
-          </div>
-        </div>
-        <div className={styles.chatActions}>
-          <button className={styles.actionButton}>
-            <Phone size={18} />
-          </button>
-          <button className={styles.actionButton}>
-            <Video size={18} />
-          </button>
-          <button className={styles.actionButton} onClick={handleSwitchDetails}>
-            <MoreHorizontal size={18} />
-          </button>
-        </div>
-      </div>
-
-      <div
-        className={styles.messagesArea}
-        ref={messagesContainerRef}
-        onScroll={handleScroll}
-      >
+      <ChatHeader chat={selectedChat} onToggleDetails={handleSwitchDetails} />
+      <div className={styles.messagesArea} ref={messagesContainerRef} onScroll={handleScroll}>
         <div className={styles.messagesContainer}>{renderMessages()}</div>
       </div>
-      <ResizableSidebar
-        defaultSize={140}
-        minSize={140}
-        maxSize={200}
-        direction="top"
-      >
+      <ResizableSidebar defaultSize={140} minSize={140} maxSize={200} direction="top">
         <div className={styles.messageInputArea}>
           <div className={styles.inputToolbar}>
             <button className={styles.toolbarButton}>
@@ -280,15 +262,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               }
               rows={1}
             />
-            {/* <button className={styles.sendButton} onClick={handleSendMessage}>
-              <Send size={18} />
-            </button> */}
           </div>
         </div>
       </ResizableSidebar>
 
-      {showDetails && selectedChat && (
-        <div className={styles.detailsPanel}>
+      {showDetails && (
+        <div ref={detailsRef} onClick={(e) => e.stopPropagation()} className={`${styles.detailsPanel}`}>
           <div className={styles.userProfile}>
             <img
               className={styles.profileAvatar}
@@ -311,6 +290,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           </div>
         </div>
       )}
+
     </div>
   );
 };

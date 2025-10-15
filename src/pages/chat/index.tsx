@@ -8,9 +8,9 @@ import { useChatSocket } from "../../hook/useChatSocket"
 export default function ChatPage(): JSX.Element {
   const { messages, joinRoom, sendMessage, currentRoomId } = useChatSocket();
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
-  const [activeTab, setActiveTab] = useState<"messages" | "friends">("messages");
+  const [activeTab, setActiveTab] = useState<string>("messages");
   const lastChatRef = useRef<Chat | null>(null);
-  const handleChangeTab = (tab: "messages" | "friends") => {
+  const handleChangeTab = (tab: string) => {
     setActiveTab(tab);
     if (tab === "friends") {
       // 切换到好友列表时,保存当前聊天状态

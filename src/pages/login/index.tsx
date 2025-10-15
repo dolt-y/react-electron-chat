@@ -2,6 +2,7 @@ import { useState, type JSX } from 'react';
 import './index.scss';
 import instance from '../../utils/request';
 import { useNavigate } from 'react-router-dom';
+import service from '../../service'
 export default function Auth(): JSX.Element {
     const [username, setUsername] = useState<string>('');
     const [password, setPassword] = useState<string>('');
@@ -12,14 +13,14 @@ export default function Auth(): JSX.Element {
         event.preventDefault();
         try {
             if (isLoginMode) {
-                const response = await instance.post('/auth/login', { username, password });
+                const response = await instance.post(service.Login, { username, password });
                 console.log('登录成功:', response);
                 if (response.success) {
                     window.localStorage.setItem('token', response.result.access_token);
                     navigate('/chat');
                 }
             } else {
-                const response = await instance.post('/auth/register', { username, password, email });
+                const response = await instance.post(service.Register, { username, password, email });
                 console.log('注册成功:', response);
                 if (response.success) {
                     handleModeSwitch();

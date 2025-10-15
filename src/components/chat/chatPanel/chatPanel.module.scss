@@ -4,45 +4,6 @@
   flex-direction: column;
   background: var(--color-background);
 
-  .chatHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-card);
-
-    .chatUserInfo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-
-      h3 {
-        font-size: 16px;
-        font-weight: 600;
-        margin: 0;
-        color: var(--color-foreground);
-      }
-
-      .status {
-        font-size: 12px;
-
-        &.online {
-          color: #00d26a;
-        }
-
-        &.offline {
-          color: var(--color-muted-foreground);
-        }
-      }
-    }
-
-    .chatActions {
-      display: flex;
-      gap: 8px;
-    }
-  }
-
   .messagesArea {
     flex: 1;
     background: #f8f9fa;
@@ -106,6 +67,62 @@
           // background: #0056cc;
         }
       }
+    }
+  }
+
+  .detailsPanel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 320px;
+    height: 100%;
+    background-color: var(--bg-primary);
+    border-left: 1px solid var(--border-light);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-popover);
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-lg);
+  }
+
+  .detailsPanel.hidden {
+    display: none;
+  }
+
+  .userProfile {
+    @include flex-center;
+    flex-direction: column;
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+
+    .profileAvatar {
+      width: 80px;
+      height: 80px;
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-md);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    h3 {
+      font-size: var(--text-lg);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .userStatus {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+  }
+
+  .profileActions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+
+    .profileAction {
+      @include button-secondary;
+      justify-content: flex-start;
+      gap: var(--spacing-sm);
     }
   }
 

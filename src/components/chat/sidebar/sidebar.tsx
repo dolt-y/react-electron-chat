@@ -10,7 +10,7 @@ import styles from './sidebar.module.scss';
 interface SidebarProps {
     className?: string;
     activeTab?: string;
-    onChangeTab?: (tab: "messages" | "friends") => void;
+    onChangeTab?: (tab: string) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ className, activeTab, onChangeTab }) => {
@@ -20,7 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, activeTab, onChange
         { icon: MessageSquare, label: "消息", tab: "messages" },
         { icon: Users, label: "好友", tab: "friends" },
         { icon: CalendarDays, label: "日程", tab: "schedule" },
-        { icon: FileText, label: "笔记", tab: "notes" }, 
+        { icon: FileText, label: "笔记", tab: "notes" },
         { icon: Settings, label: "设置", path: "/settings" },
     ];
 

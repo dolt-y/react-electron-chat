@@ -1,0 +1,38 @@
+  .chatHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-card);
+
+    .chatUserInfo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        color: var(--color-foreground);
+      }
+
+      .status {
+        font-size: 12px;
+
+        &.online {
+          color: #00d26a;
+        }
+
+        &.offline {
+          color: var(--color-muted-foreground);
+        }
+      }
+    }
+
+    .chatActions {
+      display: flex;
+      gap: 8px;
+    }
+  }
