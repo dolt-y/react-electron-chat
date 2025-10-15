@@ -1,18 +1,17 @@
 import { useRef, useState, useEffect } from "react";
 import {
-  Send,
   Paperclip,
   Smile,
   Phone,
   Video,
   MoreHorizontal,
   ImageIcon,
-  File,
 } from "lucide-react";
 import styles from "./ChatPanel.module.scss";
 import { type Chat } from "../contact/contact";
 import instance from "../../../utils/request";
 import { ResizableSidebar } from "../contact/ResizableSidebar";
+import { MessageItem } from "./message";
 
 export interface Message {
   id: number;
@@ -20,6 +19,7 @@ export interface Message {
   type: "text" | "image" | "file";
   content: string;
   senderAvatar?: string;
+  senderUsername?: string;
   createdAt: string;
   url?: string;
   fileName?: string;
@@ -196,44 +196,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     if (!cache) return null;
 
     return cache.messages.map((message) => (
-      <div
-        key={message.id}
-        className={`${styles.message} ${message.sender === "me" ? styles.messageSent : ""
-          }`}
-      >
-        {message.sender === "other" && (
-          <img
-            className={styles.messageAvatar}
-            src={message.senderAvatar || "/placeholder.svg"}
-          />
-        )}
-        <div className={styles.messageContent}>
-          {message.type === "text" && (
-            <div className={`${styles.messageBubble} ${styles.textMessage}`}>
-              {message.content}
-            </div>
-          )}
-          {message.type === "image" && (
-            <div className={`${styles.messageBubble} ${styles.imageMessage}`}>
-              <img src={message.url || message.content} alt="聊天图片" />
-            </div>
-          )}
-          {message.type === "file" && (
-            <div className={`${styles.messageBubble} ${styles.fileMessage}`}>
-              <File size={24} style={{ color: "#007aff" }} />
-              <div className={styles.fileInfo}>
-                <div className={styles.fileName}>
-                  {message.fileName || "未命名文件"}
-                </div>
-                <div className={styles.fileSize}>{message.fileSize || ""}</div>
-              </div>
-            </div>
-          )}
-          <div className={styles.messageTime}>
-            {new Date(message.createdAt).toLocaleTimeString()}
-          </div>
-        </div>
-      </div>
+      <MessageItem key={message.id} message={message} />
     ));
   };
 
@@ -287,8 +250,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         <div className={styles.messagesContainer}>{renderMessages()}</div>
       </div>
       <ResizableSidebar
+        defaultSize={140}
+        minSize={140}
+        maxSize={200}
         direction="top"
-        defaultSize={120}
       >
         <div className={styles.messageInputArea}>
           <div className={styles.inputToolbar}>
@@ -315,9 +280,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               }
               rows={1}
             />
-            <button className={styles.sendButton} onClick={handleSendMessage}>
+            {/* <button className={styles.sendButton} onClick={handleSendMessage}>
               <Send size={18} />
-            </button>
+            </button> */}
           </div>
         </div>
       </ResizableSidebar>

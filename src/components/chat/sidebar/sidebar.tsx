@@ -3,7 +3,7 @@
  * @Author: wen.yao
  * @LastEditTime: 2025-09-30 17:04:47
  */
-import { LogOut, MessageSquare, Settings, Users } from "lucide-react";
+import { CalendarDays, FileText, LogOut, MessageSquare, Settings, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import instance from "../../../utils/request";
 import styles from './sidebar.module.scss';
@@ -13,14 +13,17 @@ interface SidebarProps {
     onChangeTab?: (tab: "messages" | "friends") => void;
 }
 
-export const Sidebar: React.FC <SidebarProps> = ({ className, activeTab, onChangeTab }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ className, activeTab, onChangeTab }) => {
     const navigate = useNavigate();
 
     const menuItems = [
-        { icon: MessageSquare, label: '消息', tab: 'messages' },
-        { icon: Users, label: '好友', tab: 'friends' },
-        { icon: Settings, label: '设置', path: '/settings' },
+        { icon: MessageSquare, label: "消息", tab: "messages" },
+        { icon: Users, label: "好友", tab: "friends" },
+        { icon: CalendarDays, label: "日程", tab: "schedule" },
+        { icon: FileText, label: "笔记", tab: "notes" }, 
+        { icon: Settings, label: "设置", path: "/settings" },
     ];
+
 
     const logout = async () => {
         if (!confirm("确定退出登录吗？")) return;
