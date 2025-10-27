@@ -3,7 +3,7 @@
  * @Author: wen.yao
  * @LastEditTime: 2025-09-30 17:04:47
  */
-import { CalendarDays, FileText, LogOut, MessageSquare, Settings, Users } from "lucide-react";
+import { CalendarDays, FileText, Globe, LogOut, MessageSquare, Settings, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import instance from "../../../utils/request";
 import styles from './sidebar.module.scss';
@@ -21,9 +21,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, activeTab, onChange
         { icon: Users, label: "好友", tab: "friends" },
         { icon: CalendarDays, label: "日程", tab: "schedule" },
         { icon: FileText, label: "笔记", tab: "notes" },
+        { icon: Globe, label: "动态", tab: "moments" },
         { icon: Settings, label: "设置", path: "/settings" },
     ];
-
 
     const logout = async () => {
         if (!confirm("确定退出登录吗？")) return;

@@ -1,296 +1,238 @@
-import { useRef, useState, useEffect } from "react";
-import {
-  Paperclip,
-  Smile,
-  Phone,
-  Video,
-  ImageIcon,
-} from "lucide-react";
+import { useRef, useState, useEffect, type JSX } from "react";
+import { Paperclip, Smile, Phone, Video, ImageIcon } from "lucide-react";
 import styles from "./ChatPanel.module.scss";
 import { type Chat } from "../contact/contact";
 import instance from "../../../utils/request";
 import { ResizableSidebar } from "../contact/ResizableSidebar";
 import { MessageItem } from "./message";
-import { ChatHeader } from "./chatheader";
-
+import { ChatHeader } from "./chatHeader";
+import { formatMessageTime } from "../../../utils/chat/time";
 export interface Message {
-  id: number;
-  sender: "me" | "other";
-  type: "text" | "image" | "file";
-  content: string;
-  senderAvatar?: string;
-  senderUsername?: string;
-  createdAt: string;
-  url?: string;
-  fileName?: string;
-  fileSize?: string;
+	id: number;
+	sender: "me" | "other";
+	type: "text" | "image" | "file";
+	content: string;
+	senderAvatar?: string;
+	senderUsername?: string;
+	createdAt: string;
+	url?: string;
+	fileName?: string;
+	fileSize?: string;
 }
 
 interface ChatPanelProps {
-  selectedChat: Chat | null;
-  className?: string;
+	selectedChat: Chat | null;
+	className?: string;
+	onSendMessage?: (chatId: number, content: string) => void;
 }
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({
-  selectedChat,
-  className,
-}) => {
-  const [messageInput, setMessageInput] = useState("");
-  const [showDetails, setShowDetails] = useState(false);
-  const detailsRef = useRef<HTMLDivElement | null>(null);
+const PAGE_SIZE = 10;
+const TIME_GAP_MS = 5 * 60 * 1000;
 
-  const PAGE_SIZE = 10;
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const scrollTimer = useRef<NodeJS.Timeout | null>(null);
-  const loadingRef = useRef(false);
+export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, onSendMessage }) => {
+	const [messagesState, setMessagesState] = useState<Message[]>([]);
+	const [messageInput, setMessageInput] = useState("");
+	const [showDetails, setShowDetails] = useState(false);
 
-  // 缓存：每个会话的消息列表 & scrollTop
-  const messagesCache = useRef<Record<number, { messages: Message[]; scrollTop: number }>>({});
-  const pageCache = useRef<Record<number, number>>({});
-  const hasMoreCache = useRef<Record<number, boolean>>({});
+	const messagesContainerRef = useRef<HTMLDivElement>(null);
+	const scrollTimer = useRef<NodeJS.Timeout | null>(null);
+	const loadingRef = useRef(false);
 
-  // -------------------------------
-  // 获取消息
-  // -------------------------------
-  const [messagesState, setMessagesState] = useState<Message[]>([]);
+	const detailsRef = useRef<HTMLDivElement | null>(null);
 
-  const fetchMessages = async (chatId: number, page: number) => {
-    if (!messagesContainerRef.current) return;
+	// 缓存：每个会话的消息列表 & scrollTop & 页码 & hasMore
+	const messagesCache = useRef<Record<number, { messages: Message[]; scrollTop: number }>>({});
+	const pageCache = useRef<Record<number, number>>({});
+	const hasMoreCache = useRef<Record<number, boolean>>({});
 
-    if (loadingRef.current || hasMoreCache.current[chatId] === false) return;
-    loadingRef.current = true;
+	// -------------------------------
+	// 获取消息
+	// -------------------------------
+	const fetchMessages = async (chatId: number, page: number) => {
+		if (!messagesContainerRef.current || loadingRef.current || hasMoreCache.current[chatId] === false)
+			return;
 
-    try {
-      const res = await instance.post("/chat/messages", {
-        chatId,
-        page,
-        pageSize: PAGE_SIZE,
-      });
+		loadingRef.current = true;
+		try {
+			const res = await instance.post("/chat/messages", { chatId, page, pageSize: PAGE_SIZE });
+			if (res.success) {
+				const newMessages: Message[] = res.result;
+				if (!messagesCache.current[chatId]) {
+					messagesCache.current[chatId] = { messages: [], scrollTop: 0 };
+					pageCache.current[chatId] = 1;
+					hasMoreCache.current[chatId] = true;
+				}
+				const cache = messagesCache.current[chatId];
+				cache.messages = page === 1 ? newMessages : [...newMessages, ...cache.messages];
+				pageCache.current[chatId] = page;
+				if (newMessages.length < PAGE_SIZE) hasMoreCache.current[chatId] = false;
 
-      if (res.success) {
-        const newMessages: Message[] = res.result;
-        console.log("获取消息成功", newMessages);
-        // 初始化缓存
-        if (!messagesCache.current[chatId]) {
-          messagesCache.current[chatId] = { messages: [], scrollTop: 0 };
-          pageCache.current[chatId] = 1;
-          hasMoreCache.current[chatId] = true;
-        }
+				setMessagesState([...cache.messages]);
+				// setTimeout(scrollToBottom, 50);
+			}
+		} finally {
+			loadingRef.current = false;
+		}
+	};
 
-        const currentCache = messagesCache.current[chatId];
+	// -------------------------------
+	// 滚动到底部
+	// -------------------------------
+	const scrollToBottom = () => {
+		const container = messagesContainerRef.current;
+		const chatId = selectedChat?.chatId;
+		if (container && chatId && messagesCache.current[chatId]) {
+			container.scrollTop = container.scrollHeight;
+			messagesCache.current[chatId].scrollTop = container.scrollTop;
+		}
+	};
 
-        if (page === 1) {
-          currentCache.messages = newMessages;
-        } else {
-          currentCache.messages = [...newMessages, ...currentCache.messages];
-        }
+	// -------------------------------
+	// 监听会话切换
+	// -------------------------------
+	useEffect(() => {
+		if (!selectedChat) return;
+		const chatId = selectedChat.chatId;
+		if (!messagesCache.current[chatId]) {
+			fetchMessages(chatId, 1);
+		} else {
+			const cache = messagesCache.current[chatId];
+			setMessagesState([...cache.messages]);
+			setTimeout(() => {
+				messagesContainerRef.current!.scrollTop = cache.scrollTop;
+			}, 50);
+		}
+	}, [selectedChat]);
 
-        pageCache.current[chatId] = page;
-        if (newMessages.length < PAGE_SIZE) hasMoreCache.current[chatId] = false;
+	// -------------------------------
+	// 点击空白关闭详情面板
+	// -------------------------------
+	useEffect(() => {
+		const handleClickOutside = (e: MouseEvent) => {
+			if (detailsRef.current && !detailsRef.current.contains(e.target as Node)) {
+				setShowDetails(false);
+			}
+		};
+		if (showDetails) document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [showDetails]);
 
-        // ✅ 更新 state 触发渲染
-        setMessagesState([...currentCache.messages]);
+	// -------------------------------
+	// 上拉加载历史消息
+	// -------------------------------
+	const handleScroll = () => {
+		const container = messagesContainerRef.current;
+		const chatId = selectedChat?.chatId;
+		if (!container || !chatId) return;
 
-        // 滚动到底部
-        setTimeout(() => scrollToBottom(), 50);
-      }
-    } finally {
-      loadingRef.current = false;
-    }
-  };
+		messagesCache.current[chatId].scrollTop = container.scrollTop;
 
+		if (scrollTimer.current) clearTimeout(scrollTimer.current);
+		scrollTimer.current = setTimeout(() => {
+			if (container.scrollTop < 50 && !loadingRef.current && hasMoreCache.current[chatId]) {
+				const nextPage = (pageCache.current[chatId] || 1) + 1;
+				fetchMessages(chatId, nextPage);
+			}
+		}, 200);
+	};
 
-  // -------------------------------
-  // 监听会话切换
-  // -------------------------------
-  useEffect(() => {
-    if (!selectedChat) return;
+	// -------------------------------
+	// 发送消息
+	// -------------------------------
+	const handleSendMessage = () => {
+		if (!messageInput.trim() || !selectedChat) return;
 
-    const chatId = selectedChat.chatId;
+		const chatId = selectedChat.chatId;
+		const newMessage: Message = {
+			id: Date.now(),
+			sender: "me",
+			type: "text",
+			content: messageInput,
+			createdAt: new Date().toISOString(),
+		};
 
-    if (!messagesCache.current[chatId]) {
-      // 首次点击聊天，拉取第一页消息
-      fetchMessages(chatId, 1);
-    } else {
-      // 切换已有聊天，恢复缓存消息和 scrollTop
-      setMessagesState([...messagesCache.current[chatId].messages]);
-      setTimeout(() => {
-        const container = messagesContainerRef.current;
-        if (container) container.scrollTop = messagesCache.current[chatId].scrollTop;
-      }, 50);
-    }
-  }, [selectedChat]);
+		const cache = messagesCache.current[chatId] || { messages: [], scrollTop: 0 };
+		cache.messages = [...cache.messages, newMessage];
+		messagesCache.current[chatId] = cache;
 
-  // 点击空白区域关闭逻辑
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      // 若点击位置不在面板内，则关闭
-      if (detailsRef.current && !detailsRef.current.contains(event.target as Node)) {
-        setShowDetails(false);
-      }
-    }
+		setMessagesState([...cache.messages]);
+		setMessageInput("");
+		scrollToBottom();
 
-    if (showDetails) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+		onSendMessage?.(chatId, messageInput);
+	};
 
-    // 清除事件监听
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showDetails]);
+	const renderMessages = () => {
+		if (!selectedChat || messagesState.length === 0) return null;
 
-  // -------------------------------
-  // 滚动到底部
-  // -------------------------------
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      const container = messagesContainerRef.current;
-      const chatId = selectedChat?.chatId;
-      if (container && chatId && messagesCache.current[chatId]) {
-        container.scrollTop = container.scrollHeight;
-        messagesCache.current[chatId].scrollTop = container.scrollTop;
-      }
-    }, 50);
-  };
+		const ordered = [...messagesState].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+		const nodes: JSX.Element[] = [];
+		let lastShownTime = 0;
 
-  // -------------------------------
-  // 上拉加载历史消息
-  // -------------------------------
-  const handleScroll = () => {
-    if (!messagesContainerRef.current || !selectedChat) return;
-    const container = messagesContainerRef.current;
-    const chatId = selectedChat.chatId;
+		ordered.forEach((msg, idx) => {
+			const msgTime = Date.parse(msg.createdAt);
+			const showTime = isNaN(msgTime) || lastShownTime === 0 || msgTime - lastShownTime > TIME_GAP_MS;
+			if (showTime) {
+				nodes.push(<div key={`time-${idx}-${msg.createdAt}`} className={styles.timeSeparator}>{formatMessageTime(msg.createdAt)}</div>);
+				if (!isNaN(msgTime)) lastShownTime = msgTime;
+			}
+			nodes.push(<MessageItem key={msg.id} message={msg} />);
+		});
+		return nodes;
+	};
 
-    if (messagesCache.current[chatId])
-      messagesCache.current[chatId].scrollTop = container.scrollTop;
+	// -------------------------------
+	// 空状态
+	// -------------------------------
+	if (!selectedChat)
+		return <div className={`${styles.chatPanel} ${className || ""}`}><div className={styles.emptyState}></div></div>;
 
-    if (scrollTimer.current) clearTimeout(scrollTimer.current);
-    scrollTimer.current = setTimeout(() => {
-      if (
-        container.scrollTop < 50 &&
-        !loadingRef.current &&
-        hasMoreCache.current[chatId]
-      ) {
-        const nextPage = (pageCache.current[chatId] || 1) + 1;
-        fetchMessages(chatId, nextPage);
-      }
-    }, 200);
-  };
+	return (
+		<div className={`${styles.chatPanel} ${className || ""}`}>
+			<ChatHeader chat={selectedChat} onToggleDetails={() => setShowDetails(!showDetails)} />
+			<div className={styles.messagesArea} ref={messagesContainerRef} onScroll={handleScroll}>
+				<div className={styles.messagesContainer}>{renderMessages()}</div>
+			</div>
 
-  // -------------------------------
-  // 切换详情面板
-  // -------------------------------
-  const handleSwitchDetails = () => setShowDetails(!showDetails);
+			<ResizableSidebar defaultSize={140} minSize={140} maxSize={300} direction="top">
+				<div className={styles.messageInputArea}>
+					<div className={styles.inputToolbar}>
+						<button className={styles.toolbarButton}>
+							<Smile size={18} />
+						</button>
+						<button className={styles.toolbarButton}>
+							<Paperclip size={18} />
+						</button>
+						<button className={styles.toolbarButton}>
+							<ImageIcon size={18} />
+						</button>
+					</div>
+					<div className={styles.inputContainer}>
+						<textarea
+							className={styles.messageInput}
+							placeholder="输入消息..."
+							value={messageInput}
+							onChange={(e) => setMessageInput(e.target.value)}
+							onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
+							rows={1}
+						/>
+					</div>
+				</div>
+			</ResizableSidebar>
 
-  // -------------------------------
-  // 发送消息
-  // -------------------------------
-  const handleSendMessage = () => {
-    if (!messageInput.trim() || !selectedChat) return;
-
-    const newMessage: Message = {
-      id: Date.now(),
-      sender: "me",
-      type: "text",
-      content: messageInput,
-      createdAt: new Date().toISOString(),
-    };
-    setMessageInput("");
-
-    const cache =
-      messagesCache.current[selectedChat.chatId] || { messages: [], scrollTop: 0 };
-    cache.messages = [...cache.messages, newMessage];
-    messagesCache.current[selectedChat.chatId] = cache;
-
-    scrollToBottom();
-  };
-
-  // -------------------------------
-  // 渲染消息
-  // -------------------------------
-  const renderMessages = () => {
-    if (!selectedChat) return null;
-    const cache = messagesCache.current[selectedChat.chatId];
-    if (!cache) return null;
-
-    return cache.messages.map((message) => (
-      <MessageItem key={message.id} message={message} />
-    ));
-  };
-
-  // -------------------------------
-  // 空状态 UI
-  // -------------------------------
-  if (!selectedChat) {
-    return (
-      <div className={`${styles.chatPanel} ${className || ""}`}>
-        <div className={styles.emptyState}></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`${styles.chatPanel} ${className || ""}`}>
-      <ChatHeader chat={selectedChat} onToggleDetails={handleSwitchDetails} />
-      <div className={styles.messagesArea} ref={messagesContainerRef} onScroll={handleScroll}>
-        <div className={styles.messagesContainer}>{renderMessages()}</div>
-      </div>
-      <ResizableSidebar defaultSize={140} minSize={140} maxSize={200} direction="top">
-        <div className={styles.messageInputArea}>
-          <div className={styles.inputToolbar}>
-            <button className={styles.toolbarButton}>
-              <Smile size={18} />
-            </button>
-            <button className={styles.toolbarButton}>
-              <Paperclip size={18} />
-            </button>
-            <button className={styles.toolbarButton}>
-              <ImageIcon size={18} />
-            </button>
-          </div>
-          <div className={styles.inputContainer}>
-            <textarea
-              className={styles.messageInput}
-              placeholder="输入消息..."
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              onKeyPress={(e) =>
-                e.key === "Enter" &&
-                !e.shiftKey &&
-                (e.preventDefault(), handleSendMessage())
-              }
-              rows={1}
-            />
-          </div>
-        </div>
-      </ResizableSidebar>
-
-      {showDetails && (
-        <div ref={detailsRef} onClick={(e) => e.stopPropagation()} className={`${styles.detailsPanel}`}>
-          <div className={styles.userProfile}>
-            <img
-              className={styles.profileAvatar}
-              src={selectedChat.chatAvatar || "/placeholder.svg"}
-            />
-            <h3>{selectedChat.chatName}</h3>
-            <p className={styles.userStatus}>
-              {selectedChat.online ? "在线" : "离线"}
-            </p>
-          </div>
-          <div className={styles.profileActions}>
-            <button className={styles.profileAction}>
-              <Phone size={16} />
-              语音通话
-            </button>
-            <button className={styles.profileAction}>
-              <Video size={16} />
-              视频通话
-            </button>
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
+			{showDetails && (
+				<div ref={detailsRef} onClick={(e) => e.stopPropagation()} className={styles.detailsPanel}>
+					<div className={styles.userProfile}>
+						<img className={styles.profileAvatar} src={selectedChat.chatAvatar || "/placeholder.svg"} />
+						<h3>{selectedChat.chatName}</h3>
+						<p className={styles.userStatus}>{selectedChat.online ? "在线" : "离线"}</p>
+					</div>
+					<div className={styles.profileActions}>
+						<button className={styles.profileAction}><Phone size={16} />语音通话</button>
+						<button className={styles.profileAction}><Video size={16} />视频通话</button>
+					</div>
+				</div>
+			)}
+		</div>
+	);
 };

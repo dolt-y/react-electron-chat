@@ -21,6 +21,10 @@ export default function ChatPage(): JSX.Element {
       setSelectedChat(lastChatRef.current);
     }
   };
+  const handleSendMessage = (chatId: number, content: string) => {
+    // sendMessage(chatId, content);
+    console.log("发送消息:", chatId, content);
+  }
   useEffect(() => {
     console.log("当前房间ID:", selectedChat);
     if (selectedChat) {
@@ -45,6 +49,7 @@ export default function ChatPage(): JSX.Element {
           <ChatPanel
             className={styles.chatPanel}
             selectedChat={selectedChat}
+            onSendMessage={handleSendMessage}
           />
         </>
       )}

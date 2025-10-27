@@ -39,7 +39,7 @@
         min-height: 40px;
         resize: none;
         width: 100%;
-        padding: 10px 12px;
+        padding: 0px 12px;
         border: 1px solid var(--color-border);
         border-radius: 6px;
         background: var(--color-background);
@@ -49,22 +49,6 @@
         &:focus {
           outline: none;
           border-color: var(--color-ring);
-        }
-      }
-
-      .sendButton {
-        // background: #007aff;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 10px 16px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        &:hover {
-          // background: #0056cc;
         }
       }
     }
@@ -126,6 +110,13 @@
     }
   }
 
+  .timeSeparator {
+    text-align: center;
+    font-size: 12px;
+    color: #999;
+    margin: 12px 0;
+    user-select: none;
+  }
 
   .emptyState {
     flex: 1;
