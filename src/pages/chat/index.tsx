@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type JSX } from "react";
 import { Sidebar } from "../../components/chat/sidebar/sidebar";
 import { Contact, type Chat } from "../../components/chat/contact/contact";
-import { FriendList } from "../../components/frilend/list";
+import { FriendList } from "../../components/friend/list";
 import { ChatPanel } from "../../components/chat/chatPanel/chatPanel";
-import styles from "./chatPage.module.scss";
+import styles from "./ChatPage.module.scss";
 import { useChatSocket } from "../../hook/useChatSocket"
 export default function ChatPage(): JSX.Element {
   const { messages, joinRoom, sendMessage, currentRoomId } = useChatSocket();
@@ -15,6 +15,7 @@ export default function ChatPage(): JSX.Element {
     if (tab === "friends") {
       // 切换到好友列表时,保存当前聊天状态
       lastChatRef.current = selectedChat;
+      console.log("保存聊天状态:", lastChatRef.current);
       setSelectedChat(null);
     } else {
       // 切换回消息列表时,恢复上一次的聊天状态
@@ -47,10 +48,12 @@ export default function ChatPage(): JSX.Element {
             selectedChat={selectedChat}
           />
           <ChatPanel
+            key={selectedChat?.chatId ?? 'no-chat'}
             className={styles.chatPanel}
             selectedChat={selectedChat}
             onSendMessage={handleSendMessage}
           />
+
         </>
       )}
       {activeTab === "friends" && <FriendList />}

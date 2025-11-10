@@ -57,6 +57,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 			const res = await instance.post("/chat/messages", { chatId, page, pageSize: PAGE_SIZE });
 			if (res.success) {
 				const newMessages: Message[] = res.result;
+				console.log("获取到的消息列表", res);
 				if (!messagesCache.current[chatId]) {
 					messagesCache.current[chatId] = { messages: [], scrollTop: 0 };
 					pageCache.current[chatId] = 1;
@@ -68,7 +69,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 				if (newMessages.length < PAGE_SIZE) hasMoreCache.current[chatId] = false;
 
 				setMessagesState([...cache.messages]);
-				// setTimeout(scrollToBottom, 50);
+				if (page === 1) {
+					setTimeout(scrollToBottom, 20);
+				}
+			} else {
+				console.log("获取消息失败", res);
 			}
 		} finally {
 			loadingRef.current = false;
@@ -91,18 +96,18 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 	// 监听会话切换
 	// -------------------------------
 	useEffect(() => {
-		if (!selectedChat) return;
-		const chatId = selectedChat.chatId;
-		if (!messagesCache.current[chatId]) {
-			fetchMessages(chatId, 1);
-		} else {
-			const cache = messagesCache.current[chatId];
-			setMessagesState([...cache.messages]);
-			setTimeout(() => {
-				messagesContainerRef.current!.scrollTop = cache.scrollTop;
-			}, 50);
+		if (!selectedChat) {
+			setMessagesState([]);
+			return;
 		}
+		const chatId = selectedChat.chatId;
+		const cache = messagesCache.current[chatId];
+		if (cache) {
+			setMessagesState([...cache.messages]);
+		}
+		fetchMessages(chatId, 1);
 	}, [selectedChat]);
+
 
 	// -------------------------------
 	// 点击空白关闭详情面板
@@ -123,18 +128,22 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 	const handleScroll = () => {
 		const container = messagesContainerRef.current;
 		const chatId = selectedChat?.chatId;
-		if (!container || !chatId) return;
+		if (!container || !chatId) {
+			console.log("container or chatId is null");
+			return;
+		}
 
 		messagesCache.current[chatId].scrollTop = container.scrollTop;
 
 		if (scrollTimer.current) clearTimeout(scrollTimer.current);
 		scrollTimer.current = setTimeout(() => {
-			if (container.scrollTop < 50 && !loadingRef.current && hasMoreCache.current[chatId]) {
+			if (container.scrollTop < 50) {
 				const nextPage = (pageCache.current[chatId] || 1) + 1;
 				fetchMessages(chatId, nextPage);
 			}
 		}, 200);
 	};
+
 
 	// -------------------------------
 	// 发送消息
@@ -157,29 +166,41 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 
 		setMessagesState([...cache.messages]);
 		setMessageInput("");
-		scrollToBottom();
-
+		setTimeout(scrollToBottom, 20);
 		onSendMessage?.(chatId, messageInput);
 	};
 
 	const renderMessages = () => {
 		if (!selectedChat || messagesState.length === 0) return null;
 
-		const ordered = [...messagesState].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+		const ordered = [...messagesState].sort(
+			(a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)
+		);
 		const nodes: JSX.Element[] = [];
 		let lastShownTime = 0;
 
 		ordered.forEach((msg, idx) => {
 			const msgTime = Date.parse(msg.createdAt);
-			const showTime = isNaN(msgTime) || lastShownTime === 0 || msgTime - lastShownTime > TIME_GAP_MS;
+			const showTime =
+				isNaN(msgTime) || lastShownTime === 0 || msgTime - lastShownTime > TIME_GAP_MS;
+
 			if (showTime) {
-				nodes.push(<div key={`time-${idx}-${msg.createdAt}`} className={styles.timeSeparator}>{formatMessageTime(msg.createdAt)}</div>);
+				nodes.push(
+					<div
+						key={`time-${selectedChat.chatId}-${idx}-${msg.createdAt}`}
+						className={styles.timeSeparator}
+					>
+						{formatMessageTime(msg.createdAt)}
+					</div>
+				);
 				if (!isNaN(msgTime)) lastShownTime = msgTime;
 			}
-			nodes.push(<MessageItem key={msg.id} message={msg} />);
+			nodes.push(<MessageItem key={`msg-${selectedChat.chatId}-${msg.id}-${idx}`} message={msg} />);
 		});
+
 		return nodes;
 	};
+
 
 	// -------------------------------
 	// 空状态
