@@ -42,40 +42,18 @@
             padding: 10px 12px;
             border-radius: 10px;
             background: #f1f0f0;
-            color: #333;
             font-size: 14px;
-            &.textMessage {
-                word-break: break-word;
-            }
 
             &.messageSent {
                 background: #95ec69;
                 color: #000;
             }
 
-            // 左侧水滴尾巴（别人消息）
-            &::after {
-                content: "";
-                position: absolute;
-                width: 0;
-                height: 0;
-                border: 6px solid transparent;
-                border-top-color: #f1f0f0;
-                left: -6px;
-                top: 8px;
-            }
-
-            // 右侧水滴尾巴（自己消息）
-            &.messageSent::after {
-                position: absolute;
-                top: 30%;
-                border-top-color: #95ec69;
-                right: -7px;
-                width: 4px;
-                height: 4px;
-                left: auto;
+            &.textMessage {
+                word-break: break-word;
             }
         }
+
 
         .messageTime {
             font-size: 11px;

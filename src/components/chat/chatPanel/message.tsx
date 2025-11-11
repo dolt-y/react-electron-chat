@@ -7,13 +7,13 @@ interface MessageItemProps {
 }
 
 export const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
-  const isMe = message.sender === "me";
+  const isMe = message.senderId === 12;
   return (
     <div className={`${styles.message} ${isMe ? styles.messageSent : ""}`}>
       <img className={styles.messageAvatar} src={message.senderAvatar || "https://q2.qlogo.cn/headimg_dl?dst_uin=2233296011&spec=100&v=0.5979924341645101"} />
       <div className={styles.messageContent}>
         <div className={`${styles.messageSender} ${isMe ? styles.senderRight : styles.senderLeft}`}>
-          {message.senderUsername}
+          {isMe ? "" : message.senderUsername}
         </div>
 
         {message.type === "text" && (

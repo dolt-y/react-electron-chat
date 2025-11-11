@@ -18,7 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, activeTab, onChange
 
     const menuItems = [
         { icon: MessageSquare, label: "消息", tab: "messages" },
-        { icon: Users, label: "好友", tab: "friends" },
+        { icon: Users, label: "通讯录", tab: "friends" },
         { icon: CalendarDays, label: "日程", tab: "schedule" },
         { icon: FileText, label: "笔记", tab: "notes" },
         { icon: Globe, label: "动态", tab: "moments" },
@@ -41,18 +41,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, activeTab, onChange
         <div className={`${styles.sidebar} ${className || ""}`}>
             {/* 头像区域 */}
             <div className={styles['sidebar-header']}>
-                <div
-                    className={styles['user-avatar']}
-                    onClick={() => navigate('/profile')}
-                    title="个人资料"
-                >
-                    <img
-                        src="https://q2.qlogo.cn/headimg_dl?dst_uin=2233296011&spec=100&v=0.5979924341645101"
-                        alt="用户头像"
-                    />
+                <div className={styles['user-avatar']} onClick={() => navigate('/profile')} title="个人资料">
+                    <img src="https://q2.qlogo.cn/headimg_dl?dst_uin=2233296011&spec=100&v=0.5979924341645101" alt="用户头像" />
                 </div>
             </div>
-
             {/* 菜单区域 */}
             <div className={styles['sidebar-menu']}>
                 {menuItems.map(item => {

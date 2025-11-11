@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import styles from "./contact.module.scss";
 import instance from "../../../utils/request";
 import { ResizableSidebar } from "./ResizableSidebar";
-
+import { formatMessageTime } from "../../../utils/chat/time";
 export interface Chat {
   chatId: number;
   chatType: string;
@@ -24,10 +24,10 @@ interface ContactProps {
   className?: string;
 }
 
-export const Contact: React.FC <ContactProps> = ({ 
-  onSelectChat, 
+export const Contact: React.FC<ContactProps> = ({
+  onSelectChat,
   selectedChat,
-  className 
+  className
 }) => {
   const [searchInput, setSearchInput] = useState("");
   const [chatList, setChatList] = useState<Chat[]>([]);
@@ -35,16 +35,16 @@ export const Contact: React.FC <ContactProps> = ({
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const res = await instance.get("/chat/sessionList", { userId: 1 });
+        const res = await instance.get("/chat/sessionList", { userId: 12 });
         if (res.success) {
           const data: Chat[] = res.result;
           setChatList(data);
-          console.log("获取聊天列表成功", data);
+          console.log("获取会话列表成功", data);
         } else {
           console.error("接口返回失败", res.message);
         }
       } catch (err) {
-        console.error("获取聊天列表失败", err);
+        console.error("获取会话列表失败", err);
       }
     };
     fetchChats();
@@ -82,9 +82,8 @@ export const Contact: React.FC <ContactProps> = ({
           {filteredChats.map((chat, index) => (
             <div
               key={`${chat.chatId}-${index}`}
-              className={`${styles["contact-item"]} ${
-                selectedChat?.chatId === chat.chatId ? styles["active"] : ""
-              }`}
+              className={`${styles["contact-item"]} ${selectedChat?.chatId === chat.chatId ? styles["active"] : ""
+                }`}
               onClick={() => {
                 if (selectedChat?.chatId === chat.chatId) {
                   onSelectChat(null);
@@ -115,13 +114,7 @@ export const Contact: React.FC <ContactProps> = ({
 
               <div className={styles["contact-meta"]}>
                 <div className={styles["message-time"]}>
-                  {new Date(chat.lastMessage.createdAt).toLocaleTimeString(
-                    [],
-                    {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }
-                  )}
+                  {formatMessageTime(chat.lastMessage.createdAt, { withSeconds: false })}
                 </div>
                 {chat.unreadCount > 0 && (
                   <div className={styles["unread-badge"]}>

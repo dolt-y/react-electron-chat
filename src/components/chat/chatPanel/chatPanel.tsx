@@ -8,9 +8,10 @@ import { MessageItem } from "./message";
 import { ChatHeader } from "./chatHeader";
 import { formatMessageTime } from "../../../utils/chat/time";
 export interface Message {
-	id: number;
-	sender: "me" | "other";
+	messageId: number;
+	senderId: number;
 	type: "text" | "image" | "file";
+	isRead: boolean;
 	content: string;
 	senderAvatar?: string;
 	senderUsername?: string;
@@ -153,11 +154,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 
 		const chatId = selectedChat.chatId;
 		const newMessage: Message = {
-			id: Date.now(),
-			sender: "me",
+			messageId: Date.now(),
 			type: "text",
 			content: messageInput,
 			createdAt: new Date().toISOString(),
+			senderId: 0,
+			isRead: false
 		};
 
 		const cache = messagesCache.current[chatId] || { messages: [], scrollTop: 0 };
@@ -195,7 +197,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 				);
 				if (!isNaN(msgTime)) lastShownTime = msgTime;
 			}
-			nodes.push(<MessageItem key={`msg-${selectedChat.chatId}-${msg.id}-${idx}`} message={msg} />);
+			nodes.push(<MessageItem key={`msg-${selectedChat.chatId}-${msg.messageId}-${idx}`} message={msg} />);
 		});
 
 		return nodes;
