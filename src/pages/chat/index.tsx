@@ -5,11 +5,22 @@ import { FriendList } from "../../components/friend/list";
 import { ChatPanel } from "../../components/chat/chatPanel/chatPanel";
 import styles from "./ChatPage.module.scss";
 import { useChatSocket } from "../../hook/useChatSocket"
+import { useNavigate } from "react-router-dom";
+import { getAuthUser } from "../../utils/auth";
+import type { AuthUser } from "../../interface/auth";
 export default function ChatPage(): JSX.Element {
-  const { messages, joinRoom, sendMessage, currentRoomId } = useChatSocket();
+  const navigate = useNavigate();
+  const [currentUser] = useState<AuthUser | null>(() => getAuthUser());
+  const { joinRoom, sendMessage, socket } = useChatSocket();
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [activeTab, setActiveTab] = useState<string>("messages");
   const lastChatRef = useRef<Chat | null>(null);
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/');
+    }
+  }, [currentUser, navigate]);
+
   const handleChangeTab = (tab: string) => {
     setActiveTab(tab);
     if (tab === "friends") {
@@ -23,8 +34,8 @@ export default function ChatPage(): JSX.Element {
     }
   };
   const handleSendMessage = (chatId: number, content: string) => {
-    // sendMessage(chatId, content);
-    console.log("发送消息:", chatId, content);
+    if (!content.trim()) return;
+    sendMessage(chatId, content.trim(), "text");
   }
   useEffect(() => {
     console.log("当前房间ID:", selectedChat);
@@ -46,12 +57,15 @@ export default function ChatPage(): JSX.Element {
             className={styles.contactsPanel}
             onSelectChat={setSelectedChat}
             selectedChat={selectedChat}
+            currentUserId={currentUser?.id}
           />
           <ChatPanel
             key={selectedChat?.chatId ?? 'no-chat'}
             className={styles.chatPanel}
             selectedChat={selectedChat}
             onSendMessage={handleSendMessage}
+            currentUserId={currentUser?.id}
+            socket={socket}
           />
 
         </>

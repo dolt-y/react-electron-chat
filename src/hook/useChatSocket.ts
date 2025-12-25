@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { connectSocket, getSocket } from '../utils/socket'
+import { useEffect, useRef, useCallback } from "react";
+import { connectSocket } from "../utils/socket";
+import { Socket } from "socket.io-client";
+import { getAuthToken } from "../utils/auth";
 
-interface ChatMessage {
+export interface SocketChatMessage {
     chatId: number;
     senderId: number;
     content: string;
@@ -11,84 +13,64 @@ interface ChatMessage {
 }
 
 export const useChatSocket = () => {
-    const socketRef = useRef(connectSocket());
+    const socketRef = useRef<Socket>(connectSocket());
     const currentRoomRef = useRef<number | null>(null);
-    const [messages, setMessages] = useState<Record<number, ChatMessage[]>>({});
+
     useEffect(() => {
         const socket = socketRef.current;
+        if (!socket) return;
+
+        const token = getAuthToken();
+        if (!token) {
+            console.warn("缺少认证 token，暂不建立 Socket 连接");
+            return;
+        }
+        socket.auth = { token };
+
+        const handleConnect = () => console.log("✅ Socket 已连接", socket.id);
+        const handleDisconnect = (reason: string) => console.log("❌ Socket 断开连接:", reason);
+        const handleError = (err: any) => console.error("Socket 错误:", err);
+        const handleConnectError = (err: Error) => console.error("Socket 连接失败:", err.message);
+
+        socket.on("connect", handleConnect);
+        socket.on("disconnect", handleDisconnect);
+        socket.on("error", handleError);
+        socket.io.on("error", handleConnectError);
 
         if (!socket.connected) {
             socket.connect();
         }
 
-        socket.on("connect", () => {
-            console.log("✅ Socket 已连接", socket.id);
-        });
-
-        socket.on("disconnect", (reason) => {
-            console.log("❌ Socket 断开连接:", reason);
-        });
-
-        socket.on("message", (msg: ChatMessage) => {
-            setMessages((prev) => {
-                const chatMsgs = prev[msg.chatId] || [];
-                return { ...prev, [msg.chatId]: [...chatMsgs, msg] };
-            });
-        });
-
-        socket.on("error", (err: any) => {
-            console.error("Socket 错误:", err);
-        });
-
         return () => {
-            socket.off("connect");
-            socket.off("disconnect");
-            socket.off("message");
-            socket.off("error");
+            socket.off("connect", handleConnect);
+            socket.off("disconnect", handleDisconnect);
+            socket.off("error", handleError);
+            socket.io.off("error", handleConnectError);
         };
     }, []);
-    
-    // 切换房间
+
     const joinRoom = useCallback((chatId: number) => {
         const socket = socketRef.current;
-        if (!socket) return;
+        if (!socket || !chatId) return;
 
-        if (currentRoomRef.current) {
-            socket.emit("leaveRoom", currentRoomRef.current);
-        }
-
+        if (currentRoomRef.current === chatId) return;
         socket.emit("joinChat", { chatId });
         currentRoomRef.current = chatId;
     }, []);
 
-    // 发送消息
     const sendMessage = useCallback(
-        (chatId: number, senderId: number, content: string, type: ChatMessage["type"] = "text") => {
+        (chatId: number, content: string, type: SocketChatMessage["type"] = "text") => {
             const socket = socketRef.current;
-            if (!socket) return;
+            if (!socket || !content.trim()) return;
 
-            socket.emit("message", { chatId, senderId, content, type });
-
-            // 乐观更新
-            setMessages((prev) => {
-                const chatMsgs = prev[chatId] || [];
-                return {
-                    ...prev,
-                    [chatId]: [
-                        ...chatMsgs,
-                        { chatId, senderId, content, type, createdAt: new Date().toISOString(), senderUsername: "我" },
-                    ],
-                };
-            });
+            socket.emit("message", { chatId, content, type });
         },
         []
     );
 
     return {
         socket: socketRef.current,
-        messages,
         joinRoom,
         sendMessage,
-        currentRoomId: currentRoomRef.current,
     };
 };

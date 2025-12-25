@@ -3,6 +3,7 @@ import './index.scss';
 import instance from '../../utils/request';
 import { useNavigate } from 'react-router-dom';
 import service from '../../service'
+import { setAuthData } from '../../utils/auth';
 export default function Auth(): JSX.Element {
     const [username, setUsername] = useState<string>('');
     const [password, setPassword] = useState<string>('');
@@ -16,7 +17,7 @@ export default function Auth(): JSX.Element {
                 const response = await instance.post(service.Login, { username, password });
                 console.log('登录成功:', response);
                 if (response.success) {
-                    window.localStorage.setItem('token', response.result.access_token);
+                    setAuthData(response.result.access_token, response.result.user);
                     navigate('/chat');
                 }
             } else {

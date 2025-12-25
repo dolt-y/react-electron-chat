@@ -7,10 +7,13 @@ import { ResizableSidebar } from "../contact/ResizableSidebar";
 import { MessageItem } from "./message";
 import { ChatHeader } from "./chatHeader";
 import { formatMessageTime } from "../../../utils/chat/time";
+import { Socket } from "socket.io-client";
+import service from "../../../service";
+import type { SocketChatMessage } from "../../../hook/useChatSocket";
 export interface Message {
 	messageId: number;
 	senderId: number;
-	type: "text" | "image" | "file";
+	type: "text" | "image" | "file" | "video" | "audio";
 	isRead: boolean;
 	content: string;
 	senderAvatar?: string;
@@ -25,12 +28,14 @@ interface ChatPanelProps {
 	selectedChat: Chat | null;
 	className?: string;
 	onSendMessage?: (chatId: number, content: string) => void;
+	currentUserId?: number;
+	socket?: Socket | null;
 }
 
 const PAGE_SIZE = 10;
 const TIME_GAP_MS = 5 * 60 * 1000;
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, onSendMessage }) => {
+export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, onSendMessage, currentUserId, socket }) => {
 	const [messagesState, setMessagesState] = useState<Message[]>([]);
 	const [messageInput, setMessageInput] = useState("");
 	const [showDetails, setShowDetails] = useState(false);
@@ -55,7 +60,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 
 		loadingRef.current = true;
 		try {
-			const res = await instance.post("/chat/messages", { chatId, page, pageSize: PAGE_SIZE });
+			const res = await instance.post(service.messages, { chatId, page, pageSize: PAGE_SIZE });
 			if (res.success) {
 				const newMessages: Message[] = res.result;
 				console.log("获取到的消息列表", res);
@@ -109,6 +114,37 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 		fetchMessages(chatId, 1);
 	}, [selectedChat]);
 
+	// -------------------------------
+	// 监听 socket 消息
+	// -------------------------------
+	useEffect(() => {
+		if (!socket || !selectedChat) return;
+
+		const handleSocketMessage = (msg: SocketChatMessage) => {
+			if (msg.chatId !== selectedChat.chatId) return;
+
+			const cache = messagesCache.current[msg.chatId] || { messages: [], scrollTop: 0 };
+			const incoming: Message = {
+				messageId: Date.now(),
+				senderId: msg.senderId,
+				type: msg.type,
+				isRead: false,
+				content: msg.content,
+				senderUsername: msg.senderUsername,
+				createdAt: msg.createdAt,
+			};
+			cache.messages = [...cache.messages, incoming];
+			messagesCache.current[msg.chatId] = cache;
+			setMessagesState([...cache.messages]);
+			setTimeout(scrollToBottom, 20);
+		};
+
+		socket.on("message", handleSocketMessage);
+		return () => {
+			socket.off("message", handleSocketMessage);
+		};
+	}, [socket, selectedChat]);
+
 
 	// -------------------------------
 	// 点击空白关闭详情面板
@@ -134,7 +170,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 			return;
 		}
 
-		messagesCache.current[chatId].scrollTop = container.scrollTop;
+		if (messagesCache.current[chatId]) {
+			messagesCache.current[chatId].scrollTop = container.scrollTop;
+		}
 
 		if (scrollTimer.current) clearTimeout(scrollTimer.current);
 		scrollTimer.current = setTimeout(() => {
@@ -153,23 +191,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 		if (!messageInput.trim() || !selectedChat) return;
 
 		const chatId = selectedChat.chatId;
-		const newMessage: Message = {
-			messageId: Date.now(),
-			type: "text",
-			content: messageInput,
-			createdAt: new Date().toISOString(),
-			senderId: 0,
-			isRead: false
-		};
 
-		const cache = messagesCache.current[chatId] || { messages: [], scrollTop: 0 };
-		cache.messages = [...cache.messages, newMessage];
-		messagesCache.current[chatId] = cache;
-
-		setMessagesState([...cache.messages]);
 		setMessageInput("");
-		setTimeout(scrollToBottom, 20);
-		onSendMessage?.(chatId, messageInput);
+		onSendMessage?.(chatId, messageInput.trim());
 	};
 
 	const renderMessages = () => {
@@ -197,7 +221,13 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 				);
 				if (!isNaN(msgTime)) lastShownTime = msgTime;
 			}
-			nodes.push(<MessageItem key={`msg-${selectedChat.chatId}-${msg.messageId}-${idx}`} message={msg} />);
+			nodes.push(
+				<MessageItem
+					key={`msg-${selectedChat.chatId}-${msg.messageId}-${idx}`}
+					message={msg}
+					currentUserId={currentUserId}
+				/>
+			);
 		});
 
 		return nodes;

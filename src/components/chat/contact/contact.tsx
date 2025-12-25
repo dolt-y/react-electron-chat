@@ -4,38 +4,43 @@ import styles from "./contact.module.scss";
 import instance from "../../../utils/request";
 import { ResizableSidebar } from "./ResizableSidebar";
 import { formatMessageTime } from "../../../utils/chat/time";
+import service from "../../../service";
 export interface Chat {
   chatId: number;
   chatType: string;
   chatName: string | null;
   chatAvatar: string | null;
-  lastMessage: {
+  lastMessage?: {
     content: string;
     type: string;
     createdAt: string;
-  };
+  } | null;
   unreadCount: number;
-  online: boolean;
+  online?: boolean;
 }
 
 interface ContactProps {
   onSelectChat: (chat: Chat | null) => void;
   selectedChat: Chat | null;
   className?: string;
+  currentUserId?: number;
 }
 
 export const Contact: React.FC<ContactProps> = ({
   onSelectChat,
   selectedChat,
-  className
+  className,
+  currentUserId
 }) => {
   const [searchInput, setSearchInput] = useState("");
   const [chatList, setChatList] = useState<Chat[]>([]);
 
   useEffect(() => {
+    if (!currentUserId) return;
+
     const fetchChats = async () => {
       try {
-        const res = await instance.get("/chat/sessionList", { userId: 12 });
+        const res = await instance.get(service.sessionList, { userId: currentUserId });
         if (res.success) {
           const data: Chat[] = res.result;
           setChatList(data);
@@ -48,14 +53,41 @@ export const Contact: React.FC<ContactProps> = ({
       }
     };
     fetchChats();
-  }, []);
+  }, [currentUserId]);
 
   const filteredChats = chatList.filter((chat) =>
     (chat.chatName || "群聊").toLowerCase().includes(searchInput.toLowerCase())
   );
 
+  if (!currentUserId) {
+    return (
+      <ResizableSidebar className={className}>
+        <div className={styles["contacts-panel"]}>
+          <div className={styles["contacts-header"]}>
+            <div className={styles["header-actions"]}>
+              <div className={styles["search-box"]}>
+                <Search className={styles["search-icon"]} size={16} />
+                <input
+                  className={styles["search-input"]}
+                  placeholder="请先登录"
+                  value=""
+                  disabled
+                />
+              </div>
+            </div>
+          </div>
+          <div className={styles["contacts-list"]}>
+            <div className={styles["contact-item"]}>
+              <div className={styles["contact-info"]}>登录后可获取会话列表</div>
+            </div>
+          </div>
+        </div>
+      </ResizableSidebar>
+    );
+  }
+
   return (
-    <ResizableSidebar>
+    <ResizableSidebar className={className}>
       <div className={styles["contacts-panel"]}>
         <div className={styles["contacts-header"]}>
           <div className={styles["header-actions"]}>
@@ -108,13 +140,15 @@ export const Contact: React.FC<ContactProps> = ({
                   {chat.chatName || "群聊"}
                 </div>
                 <div className={styles["last-message"]}>
-                  {chat.lastMessage.content}
+                  {chat.lastMessage?.content || "暂无消息"}
                 </div>
               </div>
 
               <div className={styles["contact-meta"]}>
                 <div className={styles["message-time"]}>
-                  {formatMessageTime(chat.lastMessage.createdAt, { withSeconds: false })}
+                  {chat.lastMessage
+                    ? formatMessageTime(chat.lastMessage.createdAt, { withSeconds: false })
+                    : ""}
                 </div>
                 {chat.unreadCount > 0 && (
                   <div className={styles["unread-badge"]}>

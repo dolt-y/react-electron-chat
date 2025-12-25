@@ -1,4 +1,5 @@
 import { message } from 'antd';
+import { getAuthToken } from './auth';
 
 let loadingCount = 0;
 let hideLoading: (() => void) | null = null;
@@ -19,15 +20,14 @@ const closeLoading = () => {
 };
 
 const request = async (config: any) => {
-    // showLoading();
+    showLoading();
     try {
-        const token = localStorage.getItem('token');
+        const token = getAuthToken();
         if (token) {
             config.headers = config.headers || {};
             config.headers['Authorization'] = `Bearer ${token}`;
         }
         const res = await window.electronAPI.request(config);
-        // closeLoading();
 
         if (res.data.success) {
             message.success(res.data?.message || '请求成功');
@@ -37,9 +37,10 @@ const request = async (config: any) => {
             return Promise.reject(res);
         }
     } catch (err) {
-        closeLoading();
         message.error('系统错误，请联系管理员');
         return Promise.reject(err);
+    } finally {
+        closeLoading();
     }
 };
 

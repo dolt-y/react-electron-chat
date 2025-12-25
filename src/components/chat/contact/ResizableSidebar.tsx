@@ -14,6 +14,7 @@ interface ResizableSidebarProps {
     maxSize?: number;
     direction?: ResizeDirection;
     dragSensitivity?: number; // 拖动灵敏度
+    className?: string;
 }
 
 export const ResizableSidebar: React.FC<ResizableSidebarProps> = ({
@@ -23,6 +24,7 @@ export const ResizableSidebar: React.FC<ResizableSidebarProps> = ({
     maxSize = 500,
     direction = "right",
     dragSensitivity = 0.5,
+    className,
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const isResizing = useRef(false);
@@ -87,8 +89,10 @@ export const ResizableSidebar: React.FC<ResizableSidebarProps> = ({
             ? { width: size }
             : { height: size };
 
+    const containerClassName = [styles.sidebar, className].filter(Boolean).join(" ");
+
     return (
-        <div ref={containerRef} className={styles.sidebar} style={containerStyle}>
+        <div ref={containerRef} className={containerClassName} style={containerStyle}>
             <div className={styles.sidebarContent}>{children}</div>
             <div className={`${styles.handle} ${styles[direction]}`} onMouseDown={handleMouseDown} />
         </div>
