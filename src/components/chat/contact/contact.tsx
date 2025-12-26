@@ -55,6 +55,35 @@ export const Contact: React.FC<ContactProps> = ({
     fetchChats();
   }, [currentUserId]);
 
+  const markChatAsRead = async (chat: Chat) => {
+    try {
+      await instance.post(service.isRead, { chatId: chat.chatId });
+      setChatList((prev) =>
+        prev.map((item) =>
+          item.chatId === chat.chatId ? { ...item, unreadCount: 0 } : item
+        )
+      );
+      if (selectedChat?.chatId === chat.chatId) {
+        onSelectChat({ ...chat, unreadCount: 0 });
+      }
+    } catch (err) {
+      console.error("标记会话已读失败", err);
+    }
+  };
+
+  const handleChatClick = (chat: Chat) => {
+    if (selectedChat?.chatId === chat.chatId) {
+      onSelectChat(null);
+      return;
+    }
+
+    onSelectChat(chat);
+
+    if (chat.unreadCount > 0) {
+      markChatAsRead(chat);
+    }
+  };
+
   const filteredChats = chatList.filter((chat) =>
     (chat.chatName || "群聊").toLowerCase().includes(searchInput.toLowerCase())
   );
@@ -116,13 +145,7 @@ export const Contact: React.FC<ContactProps> = ({
               key={`${chat.chatId}-${index}`}
               className={`${styles["contact-item"]} ${selectedChat?.chatId === chat.chatId ? styles["active"] : ""
                 }`}
-              onClick={() => {
-                if (selectedChat?.chatId === chat.chatId) {
-                  onSelectChat(null);
-                } else {
-                  onSelectChat(chat);
-                }
-              }}
+              onClick={() => handleChatClick(chat)}
             >
               <div className={styles["contact-avatar"]}>
                 <img

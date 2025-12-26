@@ -30,7 +30,7 @@ const request = async (config: any) => {
         const res = await window.electronAPI.request(config);
 
         if (res.data.success) {
-            message.success(res.data?.message || '请求成功');
+            console.log("当前接口",config.url,res.data)
             return res.data;
         } else {
             message.error(res.data.message || '异常请求');

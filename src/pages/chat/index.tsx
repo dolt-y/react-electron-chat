@@ -70,7 +70,13 @@ export default function ChatPage(): JSX.Element {
 
         </>
       )}
-      {activeTab === "friends" && <FriendList />}
+      {activeTab === "friends" && (
+        <FriendList
+          currentUserId={currentUser?.id}
+          listClassName={styles.contactsPanel}
+          detailClassName={styles.chatPanel}
+        />
+      )}
     </div>
   );
 }
