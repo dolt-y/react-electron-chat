@@ -2,15 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { connectSocket } from "../utils/socket";
 import { Socket } from "socket.io-client";
 import { getAuthToken } from "../utils/auth";
-
-export interface SocketChatMessage {
-    chatId: number;
-    senderId: number;
-    content: string;
-    type: "text" | "image" | "file" | "video" | "audio";
-    createdAt: string;
-    senderUsername: string;
-}
+import type { SocketChatMessage } from "../shared/types/chat";
 
 export const useChatSocket = () => {
     const socketRef = useRef<Socket>(connectSocket());

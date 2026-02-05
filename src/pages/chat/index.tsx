@@ -1,25 +1,65 @@
-import { useEffect, useRef, useState, type JSX } from "react";
+import { useEffect, useRef, useState, useCallback, type JSX } from "react";
 import { Sidebar } from "../../components/chat/sidebar/sidebar";
-import { Contact, type Chat } from "../../components/chat/contact/contact";
+import { Contact } from "../../components/chat/contact/contact";
 import { FriendList } from "../../components/friend/list";
 import { ChatPanel } from "../../components/chat/chatPanel/chatPanel";
 import styles from "./ChatPage.module.scss";
-import { useChatSocket } from "../../hook/useChatSocket"
+import { useChatSocket } from "../../hook/useChatSocket";
 import { useNavigate } from "react-router-dom";
 import { getAuthUser } from "../../utils/auth";
 import type { AuthUser } from "../../interface/auth";
+import instance from "../../utils/request";
+import service from "../../service";
+import type { ChatSession, SocketChatMessage } from "../../shared/types/chat";
 export default function ChatPage(): JSX.Element {
   const navigate = useNavigate();
   const [currentUser] = useState<AuthUser | null>(() => getAuthUser());
+  const [selectedChat, setSelectedChat] = useState<ChatSession | null>(null);
+  const [chatList, setChatList] = useState<ChatSession[]>([]);
+  const handleIncomingMessage = useCallback((msg: SocketChatMessage) => {
+    setChatList((prev) =>
+      prev.map((chat) =>
+        chat.chatId === msg.chatId
+          ? {
+              ...chat,
+              lastMessage: {
+                content: msg.content,
+                type: msg.type,
+                createdAt: msg.createdAt,
+              },
+              unreadCount:
+                selectedChat?.chatId === msg.chatId ? 0 : (chat.unreadCount || 0) + 1,
+            }
+          : chat
+      )
+    );
+  }, [selectedChat]);
   const { joinRoom, sendMessage, socket } = useChatSocket();
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [activeTab, setActiveTab] = useState<string>("messages");
-  const lastChatRef = useRef<Chat | null>(null);
+  const lastChatRef = useRef<ChatSession | null>(null);
   useEffect(() => {
     if (!currentUser) {
       navigate('/');
     }
   }, [currentUser, navigate]);
+
+  useEffect(() => {
+    if (!currentUser?.id) {
+      setChatList([]);
+      return;
+    }
+    const fetchChats = async () => {
+      try {
+        const res = await instance.get<ChatSession[]>(service.sessionList, { userId: currentUser.id });
+        if (res.success) {
+          setChatList(res.result || []);
+        }
+      } catch (err) {
+        console.error("获取会话列表失败", err);
+      }
+    };
+    fetchChats();
+  }, [currentUser]);
 
   const handleChangeTab = (tab: string) => {
     setActiveTab(tab);
@@ -36,6 +76,21 @@ export default function ChatPage(): JSX.Element {
   const handleSendMessage = (chatId: number, content: string) => {
     if (!content.trim()) return;
     sendMessage(chatId, content.trim(), "text");
+    setChatList((prev) =>
+      prev.map((chat) =>
+        chat.chatId === chatId
+          ? {
+              ...chat,
+              lastMessage: {
+                content: content.trim(),
+                type: "text",
+                createdAt: new Date().toISOString(),
+              },
+              unreadCount: 0,
+            }
+          : chat
+      )
+    );
   }
   useEffect(() => {
     console.log("当前房间ID:", selectedChat);
@@ -58,6 +113,8 @@ export default function ChatPage(): JSX.Element {
             onSelectChat={setSelectedChat}
             selectedChat={selectedChat}
             currentUserId={currentUser?.id}
+            chats={chatList}
+            onChatsChange={setChatList}
           />
           <ChatPanel
             key={selectedChat?.chatId ?? 'no-chat'}

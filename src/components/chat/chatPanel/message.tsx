@@ -1,9 +1,9 @@
 import { File } from "lucide-react";
 import styles from "./message.module.scss";
-import type { Message } from "./chatPanel";
+import type { ChatMessage } from "../../../shared/types/chat";
 
 interface MessageItemProps {
-  message: Message;
+  message: ChatMessage;
   currentUserId?: number;
 }
 

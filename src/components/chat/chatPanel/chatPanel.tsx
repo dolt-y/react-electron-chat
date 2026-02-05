@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, type JSX } from "react";
 import { Paperclip, Smile, Phone, Video, ImageIcon } from "lucide-react";
 import styles from "./ChatPanel.module.scss";
-import { type Chat } from "../contact/contact";
+import type { ChatSession, ChatMessage, SocketChatMessage } from "../../../shared/types/chat";
 import instance from "../../../utils/request";
 import { ResizableSidebar } from "../contact/ResizableSidebar";
 import { MessageItem } from "./message";
@@ -9,23 +9,9 @@ import { ChatHeader } from "./chatHeader";
 import { formatMessageTime } from "../../../utils/chat/time";
 import { Socket } from "socket.io-client";
 import service from "../../../service";
-import type { SocketChatMessage } from "../../../hook/useChatSocket";
-export interface Message {
-	messageId: number;
-	senderId: number;
-	type: "text" | "image" | "file" | "video" | "audio";
-	isRead: boolean;
-	content: string;
-	senderAvatar?: string;
-	senderUsername?: string;
-	createdAt: string;
-	url?: string;
-	fileName?: string;
-	fileSize?: string;
-}
 
 interface ChatPanelProps {
-	selectedChat: Chat | null;
+	selectedChat: ChatSession | null;
 	className?: string;
 	onSendMessage?: (chatId: number, content: string) => void;
 	currentUserId?: number;
@@ -36,7 +22,7 @@ const PAGE_SIZE = 10;
 const TIME_GAP_MS = 5 * 60 * 1000;
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, onSendMessage, currentUserId, socket }) => {
-	const [messagesState, setMessagesState] = useState<Message[]>([]);
+	const [messagesState, setMessagesState] = useState<ChatMessage[]>([]);
 	const [messageInput, setMessageInput] = useState("");
 	const [showDetails, setShowDetails] = useState(false);
 
@@ -47,22 +33,19 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 	const detailsRef = useRef<HTMLDivElement | null>(null);
 
 	// 缓存：每个会话的消息列表 & scrollTop & 页码 & hasMore
-	const messagesCache = useRef<Record<number, { messages: Message[]; scrollTop: number }>>({});
+	const messagesCache = useRef<Record<number, { messages: ChatMessage[]; scrollTop: number }>>({});
 	const pageCache = useRef<Record<number, number>>({});
 	const hasMoreCache = useRef<Record<number, boolean>>({});
 
-	// -------------------------------
-	// 获取消息
-	// -------------------------------
 	const fetchMessages = async (chatId: number, page: number) => {
 		if (!messagesContainerRef.current || loadingRef.current || hasMoreCache.current[chatId] === false)
 			return;
 
 		loadingRef.current = true;
 		try {
-			const res = await instance.post(service.messages, { chatId, page, pageSize: PAGE_SIZE });
+			const res = await instance.post<ChatMessage[]>(service.messages, { chatId, page, pageSize: PAGE_SIZE });
 			if (res.success) {
-				const newMessages: Message[] = res.result;
+				const newMessages: ChatMessage[] = res.result;
 				console.log("获取到的消息列表", res);
 				if (!messagesCache.current[chatId]) {
 					messagesCache.current[chatId] = { messages: [], scrollTop: 0 };
@@ -86,9 +69,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 		}
 	};
 
-	// -------------------------------
-	// 滚动到底部
-	// -------------------------------
 	const scrollToBottom = () => {
 		const container = messagesContainerRef.current;
 		const chatId = selectedChat?.chatId;
@@ -98,9 +78,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 		}
 	};
 
-	// -------------------------------
-	// 监听会话切换
-	// -------------------------------
 	useEffect(() => {
 		if (!selectedChat) {
 			setMessagesState([]);
@@ -114,9 +91,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 		fetchMessages(chatId, 1);
 	}, [selectedChat]);
 
-	// -------------------------------
-	// 监听 socket 消息
-	// -------------------------------
 	useEffect(() => {
 		if (!socket || !selectedChat) return;
 
@@ -124,7 +98,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 			if (msg.chatId !== selectedChat.chatId) return;
 
 			const cache = messagesCache.current[msg.chatId] || { messages: [], scrollTop: 0 };
-			const incoming: Message = {
+			const incoming: ChatMessage = {
 				messageId: Date.now(),
 				senderId: msg.senderId,
 				type: msg.type,
@@ -145,10 +119,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 		};
 	}, [socket, selectedChat]);
 
-
-	// -------------------------------
-	// 点击空白关闭详情面板
-	// -------------------------------
 	useEffect(() => {
 		const handleClickOutside = (e: MouseEvent) => {
 			if (detailsRef.current && !detailsRef.current.contains(e.target as Node)) {
@@ -159,9 +129,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [showDetails]);
 
-	// -------------------------------
-	// 上拉加载历史消息
-	// -------------------------------
 	const handleScroll = () => {
 		const container = messagesContainerRef.current;
 		const chatId = selectedChat?.chatId;
@@ -183,10 +150,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 		}, 200);
 	};
 
-
-	// -------------------------------
-	// 发送消息
-	// -------------------------------
 	const handleSendMessage = () => {
 		if (!messageInput.trim() || !selectedChat) return;
 
@@ -232,11 +195,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 
 		return nodes;
 	};
-
-
-	// -------------------------------
-	// 空状态
-	// -------------------------------
+	
 	if (!selectedChat)
 		return <div className={`${styles.chatPanel} ${className || ""}`}><div className={styles.emptyState}></div></div>;
 

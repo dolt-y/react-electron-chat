@@ -1,64 +1,35 @@
 import { Search, Plus } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import styles from "./contact.module.scss";
 import instance from "../../../utils/request";
 import { ResizableSidebar } from "./ResizableSidebar";
 import { formatMessageTime } from "../../../utils/chat/time";
 import service from "../../../service";
-export interface Chat {
-  chatId: number;
-  chatType: string;
-  chatName: string | null;
-  chatAvatar: string | null;
-  lastMessage?: {
-    content: string;
-    type: string;
-    createdAt: string;
-  } | null;
-  unreadCount: number;
-  online?: boolean;
-}
+import type { ChatSession } from "../../../shared/types/chat";
 
 interface ContactProps {
-  onSelectChat: (chat: Chat | null) => void;
-  selectedChat: Chat | null;
+  onSelectChat: (chat: ChatSession | null) => void;
+  selectedChat: ChatSession | null;
   className?: string;
   currentUserId?: number;
+  chats: ChatSession[];
+  onChatsChange: Dispatch<SetStateAction<ChatSession[]>>;
 }
 
 export const Contact: React.FC<ContactProps> = ({
   onSelectChat,
   selectedChat,
   className,
-  currentUserId
+  currentUserId,
+  chats,
+  onChatsChange,
 }) => {
   const [searchInput, setSearchInput] = useState("");
-  const [chatList, setChatList] = useState<Chat[]>([]);
 
-  useEffect(() => {
-    if (!currentUserId) return;
-
-    const fetchChats = async () => {
-      try {
-        const res = await instance.get(service.sessionList, { userId: currentUserId });
-        if (res.success) {
-          const data: Chat[] = res.result;
-          setChatList(data);
-          console.log("获取会话列表成功", data);
-        } else {
-          console.error("接口返回失败", res.message);
-        }
-      } catch (err) {
-        console.error("获取会话列表失败", err);
-      }
-    };
-    fetchChats();
-  }, [currentUserId]);
-
-  const markChatAsRead = async (chat: Chat) => {
+  const markChatAsRead = async (chat: ChatSession) => {
     try {
-      await instance.post(service.isRead, { chatId: chat.chatId });
-      setChatList((prev) =>
+      await instance.post<null>(service.isRead, { chatId: chat.chatId });
+      onChatsChange((prev) =>
         prev.map((item) =>
           item.chatId === chat.chatId ? { ...item, unreadCount: 0 } : item
         )
@@ -71,7 +42,7 @@ export const Contact: React.FC<ContactProps> = ({
     }
   };
 
-  const handleChatClick = (chat: Chat) => {
+  const handleChatClick = (chat: ChatSession) => {
     if (selectedChat?.chatId === chat.chatId) {
       onSelectChat(null);
       return;
@@ -84,7 +55,7 @@ export const Contact: React.FC<ContactProps> = ({
     }
   };
 
-  const filteredChats = chatList.filter((chat) =>
+  const filteredChats = chats.filter((chat) =>
     (chat.chatName || "群聊").toLowerCase().includes(searchInput.toLowerCase())
   );
 

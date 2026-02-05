@@ -12,5 +12,9 @@ const service = {
     friendships: '/friendships/list',// 好友列表
     searchFriends: '/friendships/search',// 搜索好友
     addFriends: '/friendships/add',// 添加好友
-}
+} as const;
+
+export type ServiceKey = keyof typeof service;
+export type ServicePath = typeof service[ServiceKey];
+
 export default service;

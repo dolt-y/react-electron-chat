@@ -1,10 +1,10 @@
 import React from "react";
 import { Phone, Video, MoreHorizontal } from "lucide-react";
 import styles from "./chatHeader.module.scss";
-import { type Chat } from "../contact/contact";
+import type { ChatSession } from "../../../shared/types/chat";
 
 interface ChatHeaderProps {
-    chat: Chat;
+    chat: ChatSession;
     onToggleDetails: () => void;
 }
 

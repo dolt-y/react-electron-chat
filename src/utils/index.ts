@@ -47,27 +47,27 @@ export default {
      * 深拷贝
      * @param obj 要深拷贝的对象
      */
-    // deepCopy: function <T>(obj: T): T {
-    //     if (typeof obj !== 'object' || obj === null) {
-    //         return obj;
-    //     }
-    //     if (obj instanceof Date) {
-    //         return new Date(obj) as T;
-    //     }
-    //     if (obj instanceof RegExp) {
-    //         return new RegExp(obj) as T;
-    //     }
-    //     if (Array.isArray(obj)) {
-    //         return obj.map(item => this.deepCopy(item)) as unknown as T; // 类型断言
-    //     }
-    //     const result: { [key: string]: T } = {}; // 使用更具体的类型
-    //     for (const key in obj) {
-    //         if (Object.prototype.hasOwnProperty.call(obj, key)) {
-    //             result[key] = this.deepCopy(obj[key]);
-    //         }
-    //     }
-    //     return result as T;
-    // },
+    deepCopy: function <T>(obj: T): T {
+        if (typeof obj !== 'object' || obj === null) {
+            return obj;
+        }
+        if (obj instanceof Date) {
+            return new Date(obj) as T;
+        }
+        if (obj instanceof RegExp) {
+            return new RegExp(obj) as T;
+        }
+        if (Array.isArray(obj)) {
+            return obj.map(item => this.deepCopy(item)) as unknown as T; // 类型断言
+        }
+        const result: { [key: string]: T } = {}; // 使用更具体的类型
+        for (const key in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                result[key]  = this.deepCopy(obj[key]) as unknown as T;
+            }
+        }
+        return result as T;
+    },
 
     /**
      * 判断设备

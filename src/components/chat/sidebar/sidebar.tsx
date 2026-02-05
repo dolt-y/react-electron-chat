@@ -6,6 +6,7 @@
 import { CalendarDays, FileText, Globe, LogOut, MessageSquare, Settings, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import instance from "../../../utils/request";
+import service from "../../../service";
 import styles from './sidebar.module.scss';
 interface SidebarProps {
     className?: string;
@@ -20,15 +21,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, activeTab, onChange
         { icon: MessageSquare, label: "消息", tab: "messages" },
         { icon: Users, label: "通讯录", tab: "friends" },
         { icon: CalendarDays, label: "日程", tab: "schedule" },
-        { icon: FileText, label: "笔记", tab: "notes" },
-        { icon: Globe, label: "动态", tab: "moments" },
         { icon: Settings, label: "设置", path: "/settings" },
     ];
 
     const logout = async () => {
         if (!confirm("确定退出登录吗？")) return;
         try {
-            const response = await instance.post('/auth/logout');
+            const response = await instance.post<null>(service.Logout);
             if (response.success) navigate('/');
             else alert(response.message || "退出失败");
         } catch (err) {
