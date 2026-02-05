@@ -25,8 +25,10 @@ export const formatMessageTime = (
     const timeFormat: Intl.DateTimeFormatOptions = {
         hour: "2-digit",
         minute: "2-digit",
-        ...(withSeconds ? { second: "2-digit" } : {})
     };
+    if (withSeconds) {
+        timeFormat.second = "2-digit";
+    }
 
     if (isToday) {
         return date.toLocaleTimeString("zh-CN", timeFormat);

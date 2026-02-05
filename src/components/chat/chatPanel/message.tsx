@@ -9,26 +9,42 @@ interface MessageItemProps {
 
 export const MessageItem: React.FC<MessageItemProps> = ({ message, currentUserId }) => {
   const isMe = currentUserId !== undefined && message.senderId === currentUserId;
+  const messageClassName = [styles.message, isMe && styles.messageSent].filter(Boolean).join(" ");
+  const senderClassName = [
+    styles.messageSender,
+    isMe && styles.senderRight,
+    !isMe && styles.senderLeft,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const bubbleClassName = [styles.messageBubble, isMe && styles.messageSent].filter(Boolean).join(" ");
+  const fileBubbleClassName = [
+    styles.messageBubble,
+    isMe && styles.messageSent,
+    styles.fileMessage,
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
-    <div className={`${styles.message} ${isMe ? styles.messageSent : ""}`}>
+    <div className={messageClassName}>
       <img className={styles.messageAvatar} src={message.senderAvatar || "/placeholder.svg"} alt="头像" />
       <div className={styles.messageContent}>
-        <div className={`${styles.messageSender} ${isMe ? styles.senderRight : styles.senderLeft}`}>
-          {isMe ? "" : message.senderUsername}
+        <div className={senderClassName}>
+          {!isMe && message.senderUsername}
         </div>
 
         {message.type === "text" && (
-          <div className={`${styles.messageBubble} ${isMe ? styles.messageSent : ""}`}>
+          <div className={bubbleClassName}>
             {message.content}
           </div>
         )}
         {message.type === "image" && (
-          <div className={`${styles.messageBubble} ${isMe ? styles.messageSent : ""}`}>
+          <div className={bubbleClassName}>
             <img src={message.url || message.content} alt="聊天图片" />
           </div>
         )}
         {["file", "video", "audio"].includes(message.type) && (
-          <div className={`${styles.messageBubble} ${isMe ? styles.messageSent : ""} ${styles.fileMessage}`}>
+          <div className={fileBubbleClassName}>
             <File size={24} style={{ color: "#007aff" }} />
             <div className={styles.fileInfo}>
               <div className={styles.fileName}>{message.fileName || "文件消息"}</div>

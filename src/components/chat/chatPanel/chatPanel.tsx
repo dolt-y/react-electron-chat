@@ -53,7 +53,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 					hasMoreCache.current[chatId] = true;
 				}
 				const cache = messagesCache.current[chatId];
-				cache.messages = page === 1 ? newMessages : [...newMessages, ...cache.messages];
+				if (page === 1) {
+					cache.messages = newMessages;
+				} else {
+					cache.messages = [...newMessages, ...cache.messages];
+				}
 				pageCache.current[chatId] = page;
 				if (newMessages.length < PAGE_SIZE) hasMoreCache.current[chatId] = false;
 
@@ -199,6 +203,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 	if (!selectedChat)
 		return <div className={`${styles.chatPanel} ${className || ""}`}><div className={styles.emptyState}></div></div>;
 
+	let detailStatusText = "离线";
+	if (selectedChat.online) {
+		detailStatusText = "在线";
+	}
+
 	return (
 		<div className={`${styles.chatPanel} ${className || ""}`}>
 			<ChatHeader chat={selectedChat} onToggleDetails={() => setShowDetails(!showDetails)} />
@@ -237,7 +246,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ selectedChat, className, o
 					<div className={styles.userProfile}>
 						<img className={styles.profileAvatar} src={selectedChat.chatAvatar || "/placeholder.svg"} />
 						<h3>{selectedChat.chatName}</h3>
-						<p className={styles.userStatus}>{selectedChat.online ? "在线" : "离线"}</p>
+						<p className={styles.userStatus}>{detailStatusText}</p>
 					</div>
 					<div className={styles.profileActions}>
 						<button className={styles.profileAction}><Phone size={16} />语音通话</button>

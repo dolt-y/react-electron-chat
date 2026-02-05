@@ -5,7 +5,22 @@ import service from "../../service";
 import { ResizableSidebar } from "../chat/contact/ResizableSidebar";
 import type { FriendProfile } from "../../shared/types/friend";
 
-type FriendListResult = unknown[] | { list?: unknown[] } | null;
+type FriendApiUser = {
+  id: number
+  username: string
+  avatarUrl: string | null
+  status: "online" | "offline" | "away" | "busy" | null
+  bio: string | null
+  phone: string | null
+  email: string | null
+  location?: string | null
+}
+
+type FriendListItem = {
+  id: number
+  createdAt: string | null
+  friend: FriendApiUser
+}
 
 interface FriendListProps {
   currentUserId?: number
@@ -21,6 +36,16 @@ export const FriendList: React.FC<FriendListProps> = ({ currentUserId }) => {
   const [messages, setMessages] = useState<Array<{ id: number; text: string; sender: "me" | "friend"; time: Date }>>([])
   const [inputMessage, setInputMessage] = useState("")
 
+  const getOnlineText = (online?: boolean) => {
+    if (online) return "在线"
+    return "离线"
+  }
+
+  const pickByOnline = (online: boolean | undefined, onlineClass: string, offlineClass: string) => {
+    if (online) return onlineClass
+    return offlineClass
+  }
+
   useEffect(() => {
     if (!currentUserId) {
       setFriends([])
@@ -32,37 +57,19 @@ export const FriendList: React.FC<FriendListProps> = ({ currentUserId }) => {
       setLoading(true)
       setError(null)
       try {
-        const res = await instance.get<FriendListResult>(service.friendships, { usrid: currentUserId })
+        const res = await instance.get<FriendListItem[]>(service.friendships, { userId: currentUserId })
         if (res.success) {
-          const listSource = Array.isArray(res.result)
-            ? res.result
-            : res.result && typeof res.result === "object" && "list" in res.result && Array.isArray(res.result.list)
-              ? res.result.list
-              : []
-
-          const normalized = Array.isArray(listSource)
-            ? listSource.map((item: any) => {
-                const friend = item?.friend || item
-                const statusText = friend?.status || item?.status
-                return {
-                  id: friend?.id ?? friend?.userId ?? item?.id ?? 0,
-                  username: friend?.username || "未知用户",
-                  avatar: friend?.avatarUrl || friend?.avatar || null,
-                  online:
-                    typeof friend?.online === "boolean"
-                      ? friend.online
-                      : typeof statusText === "string"
-                        ? statusText.toLowerCase() === "online"
-                        : undefined,
-                  signature: friend?.signature || friend?.bio || item?.remark || "",
-                  intro: friend?.intro || friend?.description || friend?.bio || "",
-                  phone: friend?.phone || friend?.mobile || item?.phone || "",
-                  email: friend?.email || item?.email || "",
-                  location: friend?.location || item?.location || "",
-                  createdAt: friend?.createdAt || item?.createdAt || "",
-                }
-              })
-            : []
+          const normalized: FriendProfile[] = res.result.map(({ friend, createdAt }) => ({
+            id: friend.id,
+            username: friend.username,
+            avatar: friend.avatarUrl,
+            online: friend.status === "online",
+            signature: friend.bio,
+            phone: friend.phone,
+            email: friend.email,
+            location: friend.location,
+            createdAt,
+          }))
 
           setFriends(normalized)
           setSelectedFriendId((prev) => {
@@ -110,7 +117,10 @@ export const FriendList: React.FC<FriendListProps> = ({ currentUserId }) => {
     return filtered.find((f) => f.id === selectedFriendId) || null
   }, [filtered, selectedFriendId])
 
-  const subtitle = currentUserId ? `共有 ${friends.length} 位好友` : "请先登录查看通讯录"
+  let subtitle = "请先登录查看通讯录"
+  if (currentUserId) {
+    subtitle = `共有 ${friends.length} 位好友`
+  }
 
   const handleSendMessage = () => {
     if (!inputMessage.trim() || !activeFriend) return
@@ -153,34 +163,85 @@ export const FriendList: React.FC<FriendListProps> = ({ currentUserId }) => {
 
     return (
       <div className={styles.list}>
-        {filtered.map((friend) => (
-          <div
-            key={friend.id}
-            className={`${styles.item} ${selectedFriendId === friend.id ? styles.active : ""}`}
-            onClick={() => {
-              setSelectedFriendId(friend.id)
-              setIsChatMode(false)
-            }}
-          >
-            <div className={styles.avatarWrap}>
-              <img src={friend.avatar || "/placeholder.svg"} className={styles.avatar} alt={friend.username} />
-              <span className={`${styles.statusDot} ${friend.online ? styles.online : styles.offline}`} />
-            </div>
-            <div className={styles.content}>
-              <div className={styles.contentHeader}>
-                <span className={styles.name}>{friend.username}</span>
-                <span className={styles.status}>{friend.online ? "在线" : "离线"}</span>
+        {filtered.map((friend) => {
+          const isActive = selectedFriendId === friend.id
+          const isOnline = !!friend.online
+          const itemClassName = [styles.item, isActive && styles.active].filter(Boolean).join(" ")
+          const statusDotClassName = [
+            styles.statusDot,
+            pickByOnline(isOnline, styles.online, styles.offline),
+          ]
+            .filter(Boolean)
+            .join(" ")
+
+          return (
+            <div
+              key={friend.id}
+              className={itemClassName}
+              onClick={() => {
+                setSelectedFriendId(friend.id)
+                setIsChatMode(false)
+              }}
+            >
+              <div className={styles.avatarWrap}>
+                <img src={friend.avatar || "/placeholder.svg"} className={styles.avatar} alt={friend.username} />
+                <span className={statusDotClassName} />
               </div>
-              <p className={styles.signature}>{friend.signature || "这位好友还没有签名~"}</p>
+              <div className={styles.content}>
+                <div className={styles.contentHeader}>
+                  <span className={styles.name}>{friend.username}</span>
+                  <span className={styles.status}>{getOnlineText(isOnline)}</span>
+                </div>
+                <p className={styles.signature}>{friend.signature || "这位好友还没有签名~"}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     )
   }
 
   const renderChatWindow = () => {
     if (!activeFriend) return null
+
+    let chatContent = (
+      <div className={styles.emptyChat}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+        <p>暂无消息，快来和好友聊天吧</p>
+      </div>
+    )
+
+    if (messages.length > 0) {
+      chatContent = messages.map((msg) => {
+        const isMine = msg.sender === "me"
+        const messageClassName = [
+          styles.messageItem,
+          isMine && styles.myMessage,
+          !isMine && styles.friendMessage,
+        ]
+          .filter(Boolean)
+          .join(" ")
+
+        return (
+          <div key={msg.id} className={messageClassName}>
+            {msg.sender === "friend" && (
+              <img src={activeFriend.avatar || "/placeholder.svg"} className={styles.msgAvatar} alt="" />
+            )}
+            <div className={styles.messageBubble}>
+              <p>{msg.text}</p>
+              <span className={styles.messageTime}>
+                {msg.time.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+            {msg.sender === "me" && (
+              <img src="/placeholder.svg?height=40&width=40" className={styles.msgAvatar} alt="" />
+            )}
+          </div>
+        )
+      })
+    }
 
     return (
       <div className={styles.chatWindow}>
@@ -198,41 +259,12 @@ export const FriendList: React.FC<FriendListProps> = ({ currentUserId }) => {
             />
             <div>
               <h4>{activeFriend.username}</h4>
-              <span className={styles.chatStatus}>{activeFriend.online ? "在线" : "离线"}</span>
+              <span className={styles.chatStatus}>{getOnlineText(activeFriend.online)}</span>
             </div>
           </div>
         </div>
 
-        <div className={styles.chatMessages}>
-          {messages.length === 0 ? (
-            <div className={styles.emptyChat}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-              <p>暂无消息，快来和好友聊天吧</p>
-            </div>
-          ) : (
-            messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`${styles.messageItem} ${msg.sender === "me" ? styles.myMessage : styles.friendMessage}`}
-              >
-                {msg.sender === "friend" && (
-                  <img src={activeFriend.avatar || "/placeholder.svg"} className={styles.msgAvatar} alt="" />
-                )}
-                <div className={styles.messageBubble}>
-                  <p>{msg.text}</p>
-                  <span className={styles.messageTime}>
-                    {msg.time.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                </div>
-                {msg.sender === "me" && (
-                  <img src="/placeholder.svg?height=40&width=40" className={styles.msgAvatar} alt="" />
-                )}
-              </div>
-            ))
-          )}
-        </div>
+        <div className={styles.chatMessages}>{chatContent}</div>
 
         <div className={styles.chatInput}>
           <button className={styles.toolBtn}>
@@ -266,6 +298,11 @@ export const FriendList: React.FC<FriendListProps> = ({ currentUserId }) => {
       return renderChatWindow()
     }
 
+    let createdAtText = "未知"
+    if (activeFriend.createdAt) {
+      createdAtText = new Date(activeFriend.createdAt).toLocaleDateString()
+    }
+
     return (
       <div className={styles.detailContent}>
         <div className={styles.profileSection}>
@@ -277,9 +314,14 @@ export const FriendList: React.FC<FriendListProps> = ({ currentUserId }) => {
           <div className={styles.profileInfo}>
             <h2 className={styles.profileName}>{activeFriend.username}</h2>
             <span
-              className={`${styles.profileStatus} ${activeFriend.online ? styles.statusOnline : styles.statusOffline}`}
+              className={[
+                styles.profileStatus,
+                pickByOnline(activeFriend.online, styles.statusOnline, styles.statusOffline),
+              ]
+                .filter(Boolean)
+                .join(" ")}
             >
-              {activeFriend.online ? "在线" : "离线"}
+              {getOnlineText(activeFriend.online)}
             </span>
             {activeFriend.signature && <p className={styles.profileBio}>{activeFriend.signature}</p>}
           </div>
@@ -328,9 +370,7 @@ export const FriendList: React.FC<FriendListProps> = ({ currentUserId }) => {
             </div>
             <div className={styles.infoRow}>
               <span className={styles.infoLabel}>成为好友</span>
-              <span className={styles.infoValue}>
-                {activeFriend.createdAt ? new Date(activeFriend.createdAt).toLocaleDateString() : "未知"}
-              </span>
+              <span className={styles.infoValue}>{createdAtText}</span>
             </div>
           </div>
         </div>

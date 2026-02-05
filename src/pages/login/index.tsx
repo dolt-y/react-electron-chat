@@ -11,6 +11,20 @@ export default function Auth(): JSX.Element {
     const [isLoginMode, setIsLoginMode] = useState<boolean>(true);
     const [email, setEmail] = useState<string>('');
     const navigate = useNavigate();
+    let labels = {
+        title: '注册',
+        submit: '注册',
+        switchHint: '已有账号？',
+        switchAction: '立即登录',
+    };
+    if (isLoginMode) {
+        labels = {
+            title: '登录',
+            submit: '登录',
+            switchHint: '还没有账号？',
+            switchAction: '立即注册',
+        };
+    }
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         try {
@@ -48,7 +62,7 @@ export default function Auth(): JSX.Element {
         <div className="login-container">
             <div className="login-bg"></div>
             <form onSubmit={handleSubmit} className="auth-form">
-                <h2>{isLoginMode ? '登录' : '注册'}</h2>
+                <h2>{labels.title}</h2>
                 {!isLoginMode && (
                     <div className="form-group">
                         <input
@@ -82,12 +96,12 @@ export default function Auth(): JSX.Element {
                     />
                 </div>
                 <button type="submit" className="submit-button">
-                    {isLoginMode ? '登录' : '注册'}
+                    {labels.submit}
                 </button>
                 <p className="switch-link">
-                    {isLoginMode ? '还没有账号？' : '已有账号？'}
+                    {labels.switchHint}
                     <a href="#" onClick={handleModeSwitch}>
-                        {isLoginMode ? '立即注册' : '立即登录'}
+                        {labels.switchAction}
                     </a>
                 </p>
             </form>

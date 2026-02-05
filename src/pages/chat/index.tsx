@@ -18,20 +18,22 @@ export default function ChatPage(): JSX.Element {
   const [chatList, setChatList] = useState<ChatSession[]>([]);
   const handleIncomingMessage = useCallback((msg: SocketChatMessage) => {
     setChatList((prev) =>
-      prev.map((chat) =>
-        chat.chatId === msg.chatId
-          ? {
-              ...chat,
-              lastMessage: {
-                content: msg.content,
-                type: msg.type,
-                createdAt: msg.createdAt,
-              },
-              unreadCount:
-                selectedChat?.chatId === msg.chatId ? 0 : (chat.unreadCount || 0) + 1,
-            }
-          : chat
-      )
+      prev.map((chat) => {
+        if (chat.chatId !== msg.chatId) return chat;
+        let unreadCount = (chat.unreadCount || 0) + 1;
+        if (selectedChat?.chatId === msg.chatId) {
+          unreadCount = 0;
+        }
+        return {
+          ...chat,
+          lastMessage: {
+            content: msg.content,
+            type: msg.type,
+            createdAt: msg.createdAt,
+          },
+          unreadCount,
+        };
+      })
     );
   }, [selectedChat]);
   const { joinRoom, sendMessage, socket } = useChatSocket();
@@ -64,12 +66,10 @@ export default function ChatPage(): JSX.Element {
   const handleChangeTab = (tab: string) => {
     setActiveTab(tab);
     if (tab === "friends") {
-      // 切换到好友列表时,保存当前聊天状态
       lastChatRef.current = selectedChat;
       console.log("保存聊天状态:", lastChatRef.current);
       setSelectedChat(null);
     } else {
-      // 切换回消息列表时,恢复上一次的聊天状态
       setSelectedChat(lastChatRef.current);
     }
   };
@@ -77,19 +77,18 @@ export default function ChatPage(): JSX.Element {
     if (!content.trim()) return;
     sendMessage(chatId, content.trim(), "text");
     setChatList((prev) =>
-      prev.map((chat) =>
-        chat.chatId === chatId
-          ? {
-              ...chat,
-              lastMessage: {
-                content: content.trim(),
-                type: "text",
-                createdAt: new Date().toISOString(),
-              },
-              unreadCount: 0,
-            }
-          : chat
-      )
+      prev.map((chat) => {
+        if (chat.chatId !== chatId) return chat;
+        return {
+          ...chat,
+          lastMessage: {
+            content: content.trim(),
+            type: "text",
+            createdAt: new Date().toISOString(),
+          },
+          unreadCount: 0,
+        };
+      })
     );
   }
   useEffect(() => {

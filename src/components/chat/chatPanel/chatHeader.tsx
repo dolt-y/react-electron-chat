@@ -9,6 +9,12 @@ interface ChatHeaderProps {
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, onToggleDetails }) => {
+    let statusText = "离线";
+    let statusClass = styles.offline;
+    if (chat.online) {
+        statusText = "在线";
+        statusClass = styles.online;
+    }
     return (
         <div className={styles.chatHeader}>
             <div className={styles.chatUserInfo}>
@@ -18,11 +24,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ chat, onToggleDetails })
                 />
                 <div>
                     <h3>{chat.chatName || "未选择"}</h3>
-                    <span
-                        className={`${styles.status} ${chat.online ? styles.online : styles.offline
-                            }`}
-                    >
-                        {chat.online ? "在线" : "离线"}
+                    <span className={[styles.status, statusClass].filter(Boolean).join(" ")}>
+                        {statusText}
                     </span>
                 </div>
             </div>

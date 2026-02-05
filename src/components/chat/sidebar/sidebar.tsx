@@ -49,10 +49,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, activeTab, onChange
                 {menuItems.map(item => {
                     const Icon = item.icon;
                     const isActiveMenu = activeTab === item.tab;
+                    const itemClassName = [styles['menu-item'], isActiveMenu && styles.active]
+                        .filter(Boolean)
+                        .join(" ");
                     return (
                         <button
                             key={item.label}
-                            className={`${styles['menu-item']} ${isActiveMenu ? styles.active : ''}`}
+                            className={itemClassName}
                             onClick={() => {
                                 if (item.tab && onChangeTab) onChangeTab(item.tab);
                                 else if (item.path) navigate(item.path);

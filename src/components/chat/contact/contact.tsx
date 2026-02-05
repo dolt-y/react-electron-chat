@@ -30,9 +30,10 @@ export const Contact: React.FC<ContactProps> = ({
     try {
       await instance.post<null>(service.isRead, { chatId: chat.chatId });
       onChatsChange((prev) =>
-        prev.map((item) =>
-          item.chatId === chat.chatId ? { ...item, unreadCount: 0 } : item
-        )
+        prev.map((item) => {
+          if (item.chatId !== chat.chatId) return item;
+          return { ...item, unreadCount: 0 };
+        })
       );
       if (selectedChat?.chatId === chat.chatId) {
         onSelectChat({ ...chat, unreadCount: 0 });
@@ -111,47 +112,53 @@ export const Contact: React.FC<ContactProps> = ({
         </div>
 
         <div className={styles["contacts-list"]}>
-          {filteredChats.map((chat, index) => (
-            <div
-              key={`${chat.chatId}-${index}`}
-              className={`${styles["contact-item"]} ${selectedChat?.chatId === chat.chatId ? styles["active"] : ""
-                }`}
-              onClick={() => handleChatClick(chat)}
-            >
-              <div className={styles["contact-avatar"]}>
-                <img
-                  src={chat.chatAvatar || "/placeholder.svg"}
-                  style={{
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "50%",
-                  }}
-                />
-              </div>
+          {filteredChats.map((chat, index) => {
+            const isActive = selectedChat?.chatId === chat.chatId;
+            const itemClassName = [styles["contact-item"], isActive && styles["active"]]
+              .filter(Boolean)
+              .join(" ");
+            let lastMessageTime = "";
+            if (chat.lastMessage) {
+              lastMessageTime = formatMessageTime(chat.lastMessage.createdAt, { withSeconds: false });
+            }
 
-              <div className={styles["contact-info"]}>
-                <div className={styles["contact-name"]}>
-                  {chat.chatName || "群聊"}
+            return (
+              <div
+                key={`${chat.chatId}-${index}`}
+                className={itemClassName}
+                onClick={() => handleChatClick(chat)}
+              >
+                <div className={styles["contact-avatar"]}>
+                  <img
+                    src={chat.chatAvatar || "/placeholder.svg"}
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      borderRadius: "50%",
+                    }}
+                  />
                 </div>
-                <div className={styles["last-message"]}>
-                  {chat.lastMessage?.content || "暂无消息"}
-                </div>
-              </div>
 
-              <div className={styles["contact-meta"]}>
-                <div className={styles["message-time"]}>
-                  {chat.lastMessage
-                    ? formatMessageTime(chat.lastMessage.createdAt, { withSeconds: false })
-                    : ""}
-                </div>
-                {chat.unreadCount > 0 && (
-                  <div className={styles["unread-badge"]}>
-                    {chat.unreadCount}
+                <div className={styles["contact-info"]}>
+                  <div className={styles["contact-name"]}>
+                    {chat.chatName || "群聊"}
                   </div>
-                )}
+                  <div className={styles["last-message"]}>
+                    {chat.lastMessage?.content || "暂无消息"}
+                  </div>
+                </div>
+
+                <div className={styles["contact-meta"]}>
+                  <div className={styles["message-time"]}>{lastMessageTime}</div>
+                  {chat.unreadCount > 0 && (
+                    <div className={styles["unread-badge"]}>
+                      {chat.unreadCount}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </ResizableSidebar>

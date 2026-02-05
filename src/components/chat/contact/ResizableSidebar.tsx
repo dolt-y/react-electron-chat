@@ -2,7 +2,7 @@
  * @author wen
  * @desc 可调整大小的多方向侧边栏组件
  */
-import { useState, useRef } from "react";
+import { useState, useRef, type CSSProperties } from "react";
 import styles from "./resizableSidebar.module.scss";
 
 type ResizeDirection = "left" | "right" | "top" | "bottom";
@@ -33,11 +33,17 @@ export const ResizableSidebar: React.FC<ResizableSidebarProps> = ({
     const ticking = useRef(false);
 
     const [size, setSize] = useState(defaultSize);
+    const isHorizontal = direction === "left" || direction === "right";
+
+    const getClientValue = (event: { clientX: number; clientY: number }) => {
+        if (isHorizontal) return event.clientX;
+        return event.clientY;
+    };
 
     const handleMouseDown = (e: React.MouseEvent) => {
         e.preventDefault();
         isResizing.current = true;
-        lastClient.current = direction === "left" || direction === "right" ? e.clientX : e.clientY;
+        lastClient.current = getClientValue(e);
         document.body.style.userSelect = "none";
         document.addEventListener("mousemove", handleMouseMove);
         document.addEventListener("mouseup", handleMouseUp);
@@ -46,7 +52,7 @@ export const ResizableSidebar: React.FC<ResizableSidebarProps> = ({
     const handleMouseMove = (e: MouseEvent) => {
         if (!isResizing.current || !containerRef.current) return;
 
-        let client = direction === "left" || direction === "right" ? e.clientX : e.clientY;
+        const client = getClientValue(e);
         let delta = client - lastClient.current;
 
         // 左和上方向需要反向计算
@@ -64,7 +70,7 @@ export const ResizableSidebar: React.FC<ResizableSidebarProps> = ({
             requestAnimationFrame(() => {
                 if (!containerRef.current) return;
 
-                if (direction === "left" || direction === "right") {
+                if (isHorizontal) {
                     containerRef.current.style.width = `${sizeRef.current}px`;
                 } else {
                     containerRef.current.style.height = `${sizeRef.current}px`;
@@ -84,10 +90,12 @@ export const ResizableSidebar: React.FC<ResizableSidebarProps> = ({
         document.removeEventListener("mouseup", handleMouseUp);
     };
 
-    const containerStyle =
-        direction === "left" || direction === "right"
-            ? { width: size }
-            : { height: size };
+    const containerStyle: CSSProperties = {};
+    if (isHorizontal) {
+        containerStyle.width = size;
+    } else {
+        containerStyle.height = size;
+    }
 
     const containerClassName = [styles.sidebar, className].filter(Boolean).join(" ");
 
