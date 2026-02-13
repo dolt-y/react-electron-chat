@@ -20,8 +20,6 @@ export const formatMessageTime = (
     const yesterday = new Date(now);
     yesterday.setDate(now.getDate() - 1);
     const isYesterday = date.toDateString() === yesterday.toDateString();
-
-    // 时间格式（是否带秒）
     const timeFormat: Intl.DateTimeFormatOptions = {
         hour: "2-digit",
         minute: "2-digit",

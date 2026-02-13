@@ -23,7 +23,9 @@ type FriendListItem = {
 }
 
 interface FriendListProps {
-  currentUserId?: number
+  currentUserId?: number,
+  listClassName?: string,
+  detailClassName?: string,
 }
 
 export const FriendList: React.FC<FriendListProps> = ({ currentUserId }) => {
@@ -134,19 +136,6 @@ export const FriendList: React.FC<FriendListProps> = ({ currentUserId }) => {
 
     setMessages((prev) => [...prev, newMessage])
     setInputMessage("")
-
-    // Simulate friend reply after 1 second
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          text: "这是一条模拟回复消息",
-          sender: "friend" as const,
-          time: new Date(),
-        },
-      ])
-    }, 1000)
   }
 
   const renderState = (message: string) => (

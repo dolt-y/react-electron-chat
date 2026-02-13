@@ -53,7 +53,7 @@ const request = async <T>(config: RequestConfig): Promise<ApiResponse<T>> => {
 };
 
 export const instance = {
-    get: <T, P = Record<string, unknown>>(url: string, params?: P) =>
+    get: <T, P extends Record<string, unknown> | undefined = Record<string, unknown>>(url: string, params?: P) =>
         request<T>({ method: 'GET', url, params }),
     post: <T, D = unknown>(url: string, data?: D) =>
         request<T>({ method: 'POST', url, data }),
